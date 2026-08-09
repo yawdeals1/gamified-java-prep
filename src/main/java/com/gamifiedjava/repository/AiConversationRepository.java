@@ -40,7 +40,7 @@ public class AiConversationRepository extends StudioRepository<AiConversation> {
         c.setRole(str(r.get("role")));
         c.setMessage(str(r.get("message")));
         Integer moduleId = asInt(r.get("module_id"));
-        c.setModule(moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null);
+        c.setModule(moduleRepository.reference(moduleId));
         c.setContextType(str(r.get("context_type")));
         c.setCreatedAt(dt(r.get("created_at")));
         return c;

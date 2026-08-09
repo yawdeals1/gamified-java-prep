@@ -7,6 +7,7 @@ import com.gamifiedjava.studio.Ts;
 import org.springframework.stereotype.Repository;
 
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,5 +57,16 @@ public class StepProgressRepository extends StudioRepository<StepProgress> {
 
     public List<StepProgress> findByModuleId(Integer moduleId) {
         return findBy("module_id", moduleId);
+    }
+
+    /** One Studio API request for every module's completed-step count. */
+    public Map<Integer, Long> completedCountByModule() {
+        Map<Integer, Long> counts = new HashMap<>();
+        for (StepProgress progress : findAll()) {
+            if (progress.isDone() && progress.getModuleId() != null) {
+                counts.merge(progress.getModuleId(), 1L, Long::sum);
+            }
+        }
+        return counts;
     }
 }

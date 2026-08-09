@@ -43,9 +43,9 @@ public class QuizAttemptRepository extends StudioRepository<QuizAttempt> {
         QuizAttempt a = new QuizAttempt();
         a.setId(asInt(r.get("id")));
         Integer moduleId = asInt(r.get("module_id"));
-        a.setModule(moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null);
+        a.setModule(moduleRepository.reference(moduleId));
         Integer questionId = asInt(r.get("question_id"));
-        a.setQuestion(questionId != null ? questionRepository.findById(questionId).orElse(null) : null);
+        a.setQuestion(questionRepository.reference(questionId));
         a.setSelectedIndex(asInt(r.get("selected_index")));
         a.setCorrect(asBool(r.get("correct")));
         a.setAttemptedAt(dt(r.get("attempted_at")));

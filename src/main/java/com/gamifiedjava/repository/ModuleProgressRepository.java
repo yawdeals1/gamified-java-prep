@@ -42,7 +42,7 @@ public class ModuleProgressRepository extends StudioRepository<ModuleProgress> {
         ModuleProgress p = new ModuleProgress();
         p.setId(asInt(r.get("id")));
         Integer moduleId = asInt(r.get("module_id"));
-        p.setModule(moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null);
+        p.setModule(moduleRepository.reference(moduleId));
         p.setStatus(str(r.get("status")));
         p.setQuizScore(asInt(r.get("quiz_score")));
         p.setQuizAttempts(asInt(r.get("quiz_attempts")));

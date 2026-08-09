@@ -8,6 +8,7 @@ import com.gamifiedjava.studio.Ts;
 import org.springframework.stereotype.Repository;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class LessonStepRepository extends StudioRepository<LessonStep> {
         LessonStep s = new LessonStep();
         s.setId(asInt(r.get("id")));
         Integer moduleId = asInt(r.get("module_id"));
-        s.setModule(moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null);
+        s.setModule(moduleRepository.reference(moduleId));
         s.setOrderIndex(asInt(r.get("order_index")));
         s.setType(str(r.get("type")));
         s.setTitle(str(r.get("title")));
@@ -76,5 +77,15 @@ public class LessonStepRepository extends StudioRepository<LessonStep> {
 
     public long countByModuleId(Integer moduleId) {
         return findBy("module_id", moduleId).size();
+    }
+
+    /** One Studio API request for every module's step count. */
+    public Map<Integer, Long> countByModule() {
+        Map<Integer, Long> counts = new HashMap<>();
+        for (Map<String, Object> row : client.list("lesson_step", null, 10000)) {
+            Integer moduleId = asInt(row.get("module_id"));
+            if (moduleId != null) counts.merge(moduleId, 1L, Long::sum);
+        }
+        return counts;
     }
 }

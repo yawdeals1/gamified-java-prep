@@ -71,4 +71,17 @@ public class ModuleRepository extends StudioRepository<CourseModule> {
         all.sort(Comparator.comparingInt(m -> m.getOrderIndex() == null ? Integer.MAX_VALUE : m.getOrderIndex()));
         return all;
     }
+
+    /**
+     * Creates an id-only relationship reference without another Studio API call.
+     * Repository row mappers only need the foreign key for subsequent writes and
+     * service-level comparisons; callers that need module details load them
+     * explicitly through this repository.
+     */
+    public CourseModule reference(Integer id) {
+        if (id == null) return null;
+        CourseModule module = new CourseModule();
+        module.setId(id);
+        return module;
+    }
 }

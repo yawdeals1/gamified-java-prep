@@ -39,7 +39,7 @@ public class QuizQuestionRepository extends StudioRepository<QuizQuestion> {
         QuizQuestion q = new QuizQuestion();
         q.setId(asInt(r.get("id")));
         Integer moduleId = asInt(r.get("module_id"));
-        q.setModule(moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null);
+        q.setModule(moduleRepository.reference(moduleId));
         q.setQuestionText(str(r.get("question_text")));
         q.setOptions(str(r.get("options")));
         q.setCorrectIndex(asInt(r.get("correct_index")));
@@ -66,5 +66,12 @@ public class QuizQuestionRepository extends StudioRepository<QuizQuestion> {
     public long countByModuleId(Integer moduleId) {
         List<QuizQuestion> q = findBy("module_id", moduleId);
         return q.size();
+    }
+
+    public QuizQuestion reference(Integer id) {
+        if (id == null) return null;
+        QuizQuestion question = new QuizQuestion();
+        question.setId(id);
+        return question;
     }
 }

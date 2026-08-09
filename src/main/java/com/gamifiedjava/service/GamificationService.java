@@ -45,9 +45,13 @@ public class GamificationService {
         checkAchievements(state);
         return state;
     }
-    public void checkStreak() {
+    public AppState checkStreak() {
         AppState state = getState();
         LocalDate today = LocalDate.now();
+
+        // A dashboard view is a read for the rest of the day. Avoid a remote
+        // PATCH on every navigation once today's streak has already been set.
+        if (today.equals(state.getLastActiveDate())) return state;
 
         if (state.getLastActiveDate() != null) {
             LocalDate yesterday = today.minusDays(1);
@@ -64,6 +68,7 @@ public class GamificationService {
         state.setLastActiveDate(today);
         state.setUpdatedAt(LocalDateTime.now());
         appStateRepository.save(state);
+        return state;
     }
 
     private int calculateLevel(int xp) {

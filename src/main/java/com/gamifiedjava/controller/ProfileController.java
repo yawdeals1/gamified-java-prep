@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Controller
@@ -31,9 +33,33 @@ public class ProfileController {
 
     @GetMapping("/profile")
     public String profile(Model model) {
-        AppState state   = gamificationService.getState();
-        List<XpLog> logs = gamificationService.getRecentXpLogs();
-        List<Achievement> achievements = gamificationService.getAchievements();
+        AppState state;
+        List<XpLog> logs;
+        List<Achievement> achievements;
+        List<CourseModule> modules;
+        List<ModuleProgress> progressList;
+        Map<Integer, Integer> masteryByModule;
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var stateFuture = executor.submit(gamificationService::getState);
+            var logsFuture = executor.submit(gamificationService::getRecentXpLogs);
+            var achievementsFuture = executor.submit(gamificationService::getAchievements);
+            var modulesFuture = executor.submit(moduleService::getAllModules);
+            var progressFuture = executor.submit(moduleService::getAllProgress);
+            var masteryFuture = executor.submit(lessonStepService::masteryPercentByModule);
+            try {
+                state = stateFuture.get();
+                logs = logsFuture.get();
+                achievements = achievementsFuture.get();
+                modules = modulesFuture.get();
+                progressList = progressFuture.get();
+                masteryByModule = masteryFuture.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while loading profile data", e);
+            } catch (ExecutionException e) {
+                throw new IllegalStateException("Could not load profile data", e.getCause());
+            }
+        }
 
         // Level math
         int lvl       = state.getCurrentLevel();
@@ -58,8 +84,6 @@ public class ProfileController {
         }
 
         // Per-module mastery + same progressive-unlock logic as the dashboard
-        List<CourseModule> modules = moduleService.getAllModules();
-        List<ModuleProgress> progressList = moduleService.getAllProgress();
         Map<Integer, ModuleProgress> progressByModule = new HashMap<>();
         for (ModuleProgress p : progressList) progressByModule.put(p.getModule().getId(), p);
 
@@ -68,7 +92,7 @@ public class ProfileController {
         boolean prevHadProgress = true; // module 1 always reachable
         for (int i = 0; i < modules.size(); i++) {
             CourseModule m = modules.get(i);
-            int mastery = lessonStepService.masteryPercent(m.getId());
+            int mastery = masteryByModule.getOrDefault(m.getId(), 0);
             if (mastery >= 100) completedCount++;
 
             ModuleProgress prog = progressByModule.get(m.getId());

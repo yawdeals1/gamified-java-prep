@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 @Controller
 public class DashboardController {
@@ -32,11 +34,32 @@ public class DashboardController {
 
     @GetMapping("/")
     public String dashboard(Model model) {
-        gamificationService.checkStreak();
+        AppState state = gamificationService.checkStreak();
 
-        List<CourseModule> modules = moduleService.getAllModules();
-        List<ModuleProgress> progressList = moduleService.getAllProgress();
-        AppState state = gamificationService.getState();
+        List<CourseModule> modules;
+        List<ModuleProgress> progressList;
+        Map<Integer, Integer> masteryByModule;
+        List<XpLog> xpLogs;
+        List<Achievement> achievements;
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var modulesFuture = executor.submit(moduleService::getAllModules);
+            var progressFuture = executor.submit(moduleService::getAllProgress);
+            var masteryFuture = executor.submit(lessonStepService::masteryPercentByModule);
+            var logsFuture = executor.submit(gamificationService::getRecentXpLogs);
+            var achievementsFuture = executor.submit(gamificationService::getAchievements);
+            try {
+                modules = modulesFuture.get();
+                progressList = progressFuture.get();
+                masteryByModule = masteryFuture.get();
+                xpLogs = logsFuture.get();
+                achievements = achievementsFuture.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while loading dashboard data", e);
+            } catch (ExecutionException e) {
+                throw new IllegalStateException("Could not load dashboard data", e.getCause());
+            }
+        }
 
         Map<Integer, ModuleProgress> progressByModule = new HashMap<>();
         for (ModuleProgress p : progressList) progressByModule.put(p.getModule().getId(), p);
@@ -51,7 +74,7 @@ public class DashboardController {
         for (int i = 0; i < modules.size(); i++) {
             CourseModule m = modules.get(i);
             ModuleProgress prog = progressByModule.get(m.getId());
-            int mastery = lessonStepService.masteryPercent(m.getId());
+            int mastery = masteryByModule.getOrDefault(m.getId(), 0);
             boolean dbUnlocked = prog != null && !"locked".equals(prog.getStatus());
             boolean unlocked = i == 0 || prevHadProgress || dbUnlocked;
 
@@ -102,13 +125,13 @@ public class DashboardController {
 
         // ---- daily goal (XP earned today) ----
         LocalDate today = LocalDate.now();
-        int earnedToday = gamificationService.getRecentXpLogs().stream()
+        int earnedToday = xpLogs.stream()
                 .filter(l -> l.getCreatedAt() != null && l.getCreatedAt().toLocalDate().equals(today))
                 .mapToInt(XpLog::getXpGained).sum();
         int dailyPct = Math.min(100, (int) Math.round(earnedToday * 100.0 / DAILY_GOAL_XP));
 
         // ---- most recent achievement ----
-        Achievement recent = gamificationService.getAchievements().stream()
+        Achievement recent = achievements.stream()
                 .filter(Achievement::isUnlocked)
                 .max(Comparator.comparing(Achievement::getUnlockedAt))
                 .orElse(null);

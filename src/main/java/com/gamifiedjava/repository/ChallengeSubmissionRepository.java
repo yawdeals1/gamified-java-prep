@@ -41,7 +41,7 @@ public class ChallengeSubmissionRepository extends StudioRepository<ChallengeSub
         ChallengeSubmission s = new ChallengeSubmission();
         s.setId(asInt(r.get("id")));
         Integer moduleId = asInt(r.get("module_id"));
-        s.setModule(moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null);
+        s.setModule(moduleRepository.reference(moduleId));
         s.setSourceCode(str(r.get("source_code")));
         s.setCompileOutput(str(r.get("compile_output")));
         s.setCompileSuccess(asBool(r.get("compile_success")));

@@ -12,9 +12,14 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthService {
+
+    private static final long SESSION_CACHE_MILLIS = 30_000;
+
+    private record CachedSession(AuthUser user, long expiresAt) {}
 
     public record LoginResult(AuthUser user, String sessionToken, String error) {
         static LoginResult success(String token, AuthUser user) {
@@ -29,6 +34,7 @@ public class AuthService {
     private final RestClient restClient = RestClient.builder().build();
     private final String baseUrl;
     private final String slug;
+    private final Map<String, CachedSession> sessionCache = new ConcurrentHashMap<>();
 
     public AuthService(@Value("${deploro.auth.base-url:}") String baseUrl,
                        @Value("${deploro.auth.slug:}") String slug) {
@@ -98,6 +104,11 @@ public class AuthService {
     }
 
     public AuthUser validate(String token) {
+        CachedSession cached = sessionCache.get(token);
+        long now = System.currentTimeMillis();
+        if (cached != null && cached.expiresAt() > now) return cached.user();
+        if (cached != null) sessionCache.remove(token, cached);
+
         try {
             Map json = restClient.get()
                     .uri(authUri("/session"))
@@ -105,7 +116,9 @@ public class AuthService {
                     .retrieve()
                     .body(Map.class);
             if (json == null || !(json.get("user") instanceof Map<?, ?> userJson)) return null;
-            return toUser((Map<String, Object>) userJson);
+            AuthUser user = toUser((Map<String, Object>) userJson);
+            sessionCache.put(token, new CachedSession(user, now + SESSION_CACHE_MILLIS));
+            return user;
         } catch (HttpClientErrorException e) {
             return null;
         } catch (Exception e) {
@@ -114,6 +127,7 @@ public class AuthService {
     }
 
     public void logout(String token) {
+        sessionCache.remove(token);
         try {
             restClient.post()
                     .uri(authUri("/logout"))

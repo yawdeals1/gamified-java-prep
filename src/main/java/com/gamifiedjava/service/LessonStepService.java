@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,6 +60,34 @@ public class LessonStepService {
         if (total == 0) return 0;
         long done = completedStepIds(moduleId).size();
         return (int) Math.round(done * 100.0 / total);
+    }
+
+    /**
+     * Calculates mastery for every module with two bulk Studio API reads instead
+     * of two remote requests per module (plus relationship N+1 lookups).
+     */
+    public Map<Integer, Integer> masteryPercentByModule() {
+        Map<Integer, Long> totals;
+        Map<Integer, Long> completed;
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var totalsFuture = executor.submit(stepRepository::countByModule);
+            var completedFuture = executor.submit(progressRepository::completedCountByModule);
+            try {
+                totals = totalsFuture.get();
+                completed = completedFuture.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while loading mastery data", e);
+            } catch (java.util.concurrent.ExecutionException e) {
+                throw new IllegalStateException("Could not load mastery data", e.getCause());
+            }
+        }
+        Map<Integer, Integer> mastery = new HashMap<>();
+        totals.forEach((moduleId, total) -> {
+            long done = completed.getOrDefault(moduleId, 0L);
+            mastery.put(moduleId, total == 0 ? 0 : (int) Math.round(done * 100.0 / total));
+        });
+        return mastery;
     }
 
     /** Client-facing view of a step â€” deliberately omits answers (correctIndex, expectedOutput, solution). */
