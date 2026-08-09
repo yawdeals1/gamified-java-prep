@@ -446,7 +446,7 @@
   font-style: normal;
   font-weight: 100 700;
   font-display: swap;
-  src: url('/fonts/material-symbols-subset.woff2?v=2') format('woff2');
+  src: url('/fonts/material-symbols-app-v364.woff2') format('woff2');
 }
 
 .material-symbols-outlined {
