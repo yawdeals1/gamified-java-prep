@@ -29,7 +29,7 @@ public class AuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if (!authService.isConfigured()) return true;
         String path = request.getRequestURI();
-        if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")) return true;
+        if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/") || path.startsWith("/img/")) return true;
         return PUBLIC_PATHS.contains(path);
     }
 
