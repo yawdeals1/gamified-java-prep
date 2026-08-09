@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JAVA_CORE | Profile</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: {
+                colors: {
+                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
+                    "on-primary": "#003824", "primary-fixed": "#6ffbbe", "primary-fixed-dim": "#4edea3",
+                    "ghost-text": "#8A9895", "on-surface": "#dde4dd", "primary-text": "#EAF2EF",
+                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
+                    "elevated-graphite": "#1A2224", "hairline": "rgba(148,163,161,0.14)",
+                    "emerald-wash": "rgba(16,185,129,0.12)", "secondary": "#f5be3c",
+                    "fault-red": "#E5533C", "outline-variant": "#3c4a42",
+                    "on-surface-variant": "#bbcabf", "surface-variant": "#2f3632"
+                },
+                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+                fontFamily: {
+                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-lg": ["Geist", "sans-serif"], "headline-md": ["Geist", "sans-serif"],
+                    "stat-lg": ["JetBrains Mono", "monospace"], "code-md": ["JetBrains Mono", "monospace"]
+                }
+            }}
+        };
+    </script>
+    <style>
+        body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
+        @keyframes bar-fill { from { width: 0; } to { width: var(--target-w); } }
+        .bar-animate { animation: bar-fill 1s cubic-bezier(.16,1,.3,1) forwards; }
+        @keyframes ring-draw { from { stroke-dashoffset: 377; } to { stroke-dashoffset: var(--target); } }
+        .ring-animate { animation: ring-draw 1.2s cubic-bezier(.16,1,.3,1) forwards; }
+        .stat-card { background: #12181A; border: 1px solid rgba(148,163,161,0.14); }
+    </style>
+</head>
+<body class="font-body-md min-h-screen">
+
+<!-- Header -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6">
+        <a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a>
+        <nav class="hidden md:flex gap-8">
+            <a href="/" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">Skill Map</a>
+            <a href="/achievements" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">Achievements</a>
+            <a href="/ai/chat" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">AI Tutor</a>
+            <a href="/profile" class="font-label-sm text-xs uppercase tracking-wider text-primary border-b-2 border-primary pb-1">Profile</a>
+        </nav>
+    </div>
+    <div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+        <span class="font-label-sm text-xs text-primary" th:text="${state.totalXp} + ' XP'">0 XP</span>
+    </div>
+</header>
+
+<main class="pt-20 pb-24 px-6" style="max-width:1100px; margin:0 auto;">
+
+    <!-- Top grid: player card + stats -->
+    <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 mb-8">
+
+        <!-- Player Card -->
+        <div class="bg-panel-slate rounded-2xl border border-hairline p-6 flex flex-col items-center text-center relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- XP Ring -->
+            <div class="relative w-32 h-32 mb-4">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="52" fill="transparent"
+                            stroke="#4edea3" stroke-width="5" stroke-opacity="0.12"/>
+                    <circle cx="60" cy="60" r="52" fill="transparent"
+                            stroke="#4edea3" stroke-width="5" stroke-linecap="round"
+                            stroke-dasharray="377" stroke-dashoffset="377"
+                            class="ring-animate"
+                            th:attr="style='--target:' + ${levelRingOffset}"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <!-- Avatar initials -->
+                    <div class="w-16 h-16 rounded-full bg-emerald-wash border border-primary/30 flex items-center justify-center">
+                        <span class="font-stat-lg text-lg text-primary font-bold">JC</span>
+                    </div>
+                </div>
+            </div>
+
+            <span class="font-label-sm text-[10px] text-primary/60 uppercase tracking-widest mb-1"
+                  th:text="'LVL ' + ${state.currentLevel}">LVL 1</span>
+            <h2 class="font-headline-lg text-xl text-primary-text font-bold mb-1"
+                th:text="${rank}">Bootstrapper</h2>
+            <p class="font-label-sm text-xs text-ghost-text mb-4" th:text="${state.totalXp} + ' total XP'">0 XP</p>
+
+            <!-- Level progress -->
+            <div class="w-full mb-4">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-wider">To next level</span>
+                    <span class="font-label-sm text-[10px] text-primary" th:text="${xpToNext} + ' XP'">0 XP</span>
+                </div>
+                <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full bar-animate"
+                         style="width: 0"
+                         th:attr="style='--target-w:' + ${levelPct} + '%; width:0'"></div>
+                </div>
+            </div>
+
+            <!-- Streak -->
+            <div class="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-xl border border-hairline">
+                <span class="material-symbols-outlined text-secondary text-lg"
+                      style="font-variation-settings:'FILL' 1;">local_fire_department</span>
+                <span class="font-stat-lg text-base font-bold" th:text="${state.streakCount}">0</span>
+                <span class="font-label-sm text-xs text-ghost-text">day streak</span>
+            </div>
+        </div>
+
+        <!-- Stats grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <!-- Total XP -->
+            <div class="stat-card rounded-2xl p-5 flex flex-col gap-2">
+                <span class="material-symbols-outlined text-primary text-xl"
+                      style="font-variation-settings:'FILL' 1;">bolt</span>
+                <div>
+                    <div class="font-stat-lg text-2xl font-bold text-primary-text"
+                         th:text="${state.totalXp}">0</div>
+                    <div class="font-label-sm text-xs text-ghost-text uppercase tracking-wider">Total XP</div>
+                </div>
+            </div>
+
+            <!-- Current Level -->
+            <div class="stat-card rounded-2xl p-5 flex flex-col gap-2">
+                <span class="material-symbols-outlined text-primary text-xl"
+                      style="font-variation-settings:'FILL' 1;">military_tech</span>
+                <div>
+                    <div class="font-stat-lg text-2xl font-bold text-primary-text"
+                         th:text="${state.currentLevel}">1</div>
+                    <div class="font-label-sm text-xs text-ghost-text uppercase tracking-wider">Level</div>
+                </div>
+            </div>
+
+            <!-- Modules Done -->
+            <div class="stat-card rounded-2xl p-5 flex flex-col gap-2">
+                <span class="material-symbols-outlined text-primary text-xl"
+                      style="font-variation-settings:'FILL' 1;">check_circle</span>
+                <div>
+                    <div class="font-stat-lg text-2xl font-bold text-primary-text">
+                        <span th:text="${completedCount}">0</span><span class="text-ghost-text text-base"
+                              th:text="' / ' + ${totalModules}">/9</span>
+                    </div>
+                    <div class="font-label-sm text-xs text-ghost-text uppercase tracking-wider">Modules Done</div>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="stat-card rounded-2xl p-5 flex flex-col gap-2">
+                <span class="material-symbols-outlined text-secondary text-xl"
+                      style="font-variation-settings:'FILL' 1;">emoji_events</span>
+                <div>
+                    <div class="font-stat-lg text-2xl font-bold text-primary-text">
+                        <span th:text="${unlockedAch}">0</span><span class="text-ghost-text text-base"
+                              th:text="' / ' + ${totalAch}">/13</span>
+                    </div>
+                    <div class="font-label-sm text-xs text-ghost-text uppercase tracking-wider">Achievements</div>
+                </div>
+            </div>
+
+            <!-- Days Active -->
+            <div class="stat-card rounded-2xl p-5 flex flex-col gap-2">
+                <span class="material-symbols-outlined text-primary text-xl"
+                      style="font-variation-settings:'FILL' 1;">calendar_today</span>
+                <div>
+                    <div class="font-stat-lg text-2xl font-bold text-primary-text"
+                         th:text="${daysActive}">1</div>
+                    <div class="font-label-sm text-xs text-ghost-text uppercase tracking-wider">Days Active</div>
+                </div>
+            </div>
+
+            <!-- Daily Goal -->
+            <div class="stat-card rounded-2xl p-5 flex flex-col gap-2">
+                <span class="material-symbols-outlined text-primary text-xl"
+                      style="font-variation-settings:'FILL' 1;">track_changes</span>
+                <div>
+                    <div class="font-stat-lg text-2xl font-bold text-primary-text">
+                        <span th:text="${dailyEarned}">0</span><span class="text-ghost-text text-base"
+                              th:text="'/' + ${dailyGoal}">/100</span>
+                    </div>
+                    <div class="font-label-sm text-xs text-ghost-text uppercase tracking-wider">Today's XP</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Mastery -->
+    <div class="mb-8">
+        <h2 class="font-label-sm text-xs text-ghost-text uppercase tracking-widest mb-4">Module Mastery</h2>
+        <div class="bg-panel-slate rounded-2xl border border-hairline overflow-hidden">
+            <div th:each="ms, iter : ${moduleStats}"
+                 class="px-5 py-4"
+                 th:classappend="${!iter.last} ? 'border-b border-hairline' : ''">
+                <div class="flex items-center gap-4">
+                    <span class="font-stat-lg text-xs text-ghost-text/50 w-5 shrink-0"
+                          th:text="${iter.count}">1</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <!-- Unlocked: clickable title -->
+                            <a th:if="${ms.unlocked}"
+                               th:href="@{/learn/{slug}(slug=${ms.slug})}"
+                               class="font-body-md text-sm truncate hover:text-primary transition-colors"
+                               th:classappend="${ms.mastery >= 100} ? 'text-primary' : 'text-on-surface-variant'"
+                               th:text="${ms.title}">Module Title</a>
+                            <!-- Locked: plain text, muted -->
+                            <span th:unless="${ms.unlocked}"
+                                  class="font-body-md text-sm truncate text-ghost-text/40"
+                                  th:text="${ms.title}">Module Title</span>
+                            <span class="font-stat-lg text-xs shrink-0 ml-4"
+                                  th:classappend="${ms.mastery >= 100} ? 'text-primary' : 'text-ghost-text'"
+                                  th:text="${ms.mastery} + '%'">0%</span>
+                        </div>
+                        <div class="w-full h-1 bg-surface-container rounded-full overflow-hidden">
+                            <div class="h-full rounded-full bar-animate"
+                                 style="width:0"
+                                 th:classappend="${ms.mastery >= 100} ? 'bg-primary' : 'bg-primary/40'"
+                                 th:attr="style='--target-w:' + ${ms.mastery} + '%; width:0; animation-delay:' + ${iter.index * 60} + 'ms'">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Mastered: checkmark -->
+                    <span th:if="${ms.mastery >= 100}"
+                          class="material-symbols-outlined text-primary text-base shrink-0"
+                          style="font-variation-settings:'FILL' 1;">verified</span>
+                    <!-- Unlocked + not mastered: Start / Resume button -->
+                    <a th:if="${ms.unlocked and ms.mastery < 100}"
+                       th:href="@{/learn/{slug}(slug=${ms.slug})}"
+                       class="shrink-0 px-3 py-1 bg-primary/10 border border-primary/20 rounded-lg font-label-sm text-[10px] text-primary hover:bg-primary/20 transition-all">
+                        <span th:text="${ms.mastery > 0} ? 'Resume' : 'Start'">Start</span>
+                    </a>
+                    <!-- Locked: lock icon -->
+                    <span th:if="${!ms.unlocked}"
+                          class="material-symbols-outlined text-ghost-text/30 text-base shrink-0">lock</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP Activity Log -->
+    <div>
+        <h2 class="font-label-sm text-xs text-ghost-text uppercase tracking-widest mb-4">Recent XP Activity</h2>
+        <div class="bg-panel-slate rounded-2xl border border-hairline overflow-hidden">
+            <div th:if="${logs.empty}" class="px-6 py-10 text-center">
+                <span class="material-symbols-outlined text-ghost-text/30 text-4xl block mb-3">bolt</span>
+                <p class="font-label-sm text-xs text-ghost-text">No XP earned yet — start a lesson to begin.</p>
+            </div>
+            <div th:each="log, iter : ${logs}"
+                 class="flex items-center justify-between px-5 py-3.5"
+                 th:classappend="${!iter.last} ? 'border-b border-hairline' : ''">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary/60 text-base">bolt</span>
+                    <div>
+                        <p class="font-body-md text-sm text-on-surface-variant" th:text="${log.action}">action</p>
+                        <p th:if="${log.note}"
+                           class="font-label-sm text-[10px] text-ghost-text/60 mt-0.5" th:text="${log.note}"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="font-label-sm text-[10px] text-ghost-text"
+                          th:if="${log.createdAt != null}"
+                          th:text="${#temporals.format(log.createdAt, 'MMM d, HH:mm')}"></span>
+                    <span class="font-stat-lg text-sm text-primary font-bold"
+                          th:text="'+' + ${log.xpGained} + ' XP'">+0 XP</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

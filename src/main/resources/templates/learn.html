@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html class="dark" lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title th:text="'JAVA_CORE | ' + ${module.title}">JAVA_CORE | Lesson Player</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: {
+        "on-surface": "#dde4dd", "emerald-wash": "rgba(16,185,129,0.12)", "surface-variant": "#2f3632",
+        "surface-dim": "#0e1511", "secondary": "#f5be3c", "primary-container": "#10b981",
+        "surface-container-lowest": "#09100c", "surface-container-low": "#161d19", "surface": "#0e1511",
+        "elevated-graphite": "#1A2224", "surface-tint": "#4edea3", "tertiary": "#ffb3af",
+        "cockpit-base": "#0B0F0E", "primary-fixed-dim": "#4edea3", "error": "#ffb4ab",
+        "surface-container": "#1a211d", "primary": "#4edea3", "on-primary": "#003824",
+        "error-container": "#93000a", "outline": "#86948a", "panel-slate": "#12181A",
+        "secondary-container": "#c29100", "primary-fixed": "#6ffbbe", "on-primary-container": "#00422b",
+        "surface-container-high": "#242c27", "ghost-text": "#8A9895", "primary-text": "#EAF2EF",
+        "background": "#0e1511", "hairline": "rgba(148,163,161,0.14)", "outline-variant": "#3c4a42",
+        "on-surface-variant": "#bbcabf", "fault-red": "#E5533C", "on-primary-fixed": "#002113"
+      },
+      borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+      spacing: { gutter: "1.5rem", "max-width": "1400px", "stage-padding": "2rem" },
+      fontFamily: {
+        "body-md": ["Geist"], "label-sm": ["JetBrains Mono"], "headline-lg": ["Geist"],
+        "body-lg": ["Geist"], "code-md": ["JetBrains Mono"], "stat-lg": ["JetBrains Mono"], "headline-md": ["Geist"]
+      }
+    } }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+<style>
+  /* Markdown prose — dark cockpit theme */
+  .md-body h1,.md-body h2,.md-body h3 { color:#EAF2EF; font-family:Geist,sans-serif; font-weight:600; margin:.7em 0 .35em; }
+  .md-body h1 { font-size:1.25rem; } .md-body h2 { font-size:1.1rem; } .md-body h3 { font-size:1rem; }
+  .md-body p { margin:.45em 0; line-height:1.6; }
+  .md-body ul,.md-body ol { padding-left:1.4em; margin:.45em 0; }
+  .md-body li { margin:.2em 0; }
+  .md-body code { background:rgba(78,222,163,.12); color:#4edea3; padding:.1em .35em; border-radius:.2em; font-family:'JetBrains Mono',monospace; font-size:.875em; }
+  .md-body pre { background:#09100c; border:1px solid rgba(148,163,161,.14); border-radius:.5rem; padding:1em; overflow-x:auto; margin:.6em 0; }
+  .md-body pre code { background:none; color:#EAF2EF; padding:0; font-size:.8rem; }
+  .md-body strong { color:#EAF2EF; font-weight:600; }
+  .md-body em { color:#bbcabf; font-style:italic; }
+  .md-body table { border-collapse:collapse; width:100%; margin:.7em 0; font-size:.85em; }
+  .md-body th { background:rgba(78,222,163,.1); color:#4edea3; padding:.4em .7em; text-align:left; border:1px solid rgba(148,163,161,.14); }
+  .md-body td { padding:.35em .7em; border:1px solid rgba(148,163,161,.14); color:#bbcabf; }
+  .md-body blockquote { border-left:2px solid #4edea3; padding-left:1em; color:#8A9895; margin:.5em 0; font-style:italic; }
+  .md-body hr { border:none; border-top:1px solid rgba(148,163,161,.14); margin:.75em 0; }
+  [x-cloak] { display: none !important; }
+  @keyframes emerald-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(78,222,163,0.4);} 50% { box-shadow:0 0 0 6px rgba(78,222,163,0);} }
+  .pulse-ring { animation: emerald-pulse 2s infinite; }
+  @keyframes float-up { 0% { transform:translateY(0); opacity:0;} 20% { opacity:1;} 100% { transform:translateY(-44px); opacity:0;} }
+  .xp-toast { animation: float-up 2.4s ease-out forwards; }
+  @keyframes slide-in { from { transform:translateX(20px); opacity:0;} to { transform:translateX(0); opacity:1;} }
+  .stage-transition { animation: slide-in .5s cubic-bezier(.16,1,.3,1); }
+  @keyframes shake { 10%,90%{transform:translateX(-1px);} 30%,70%{transform:translateX(4px);} 50%{transform:translateX(-6px);} }
+  .shake { animation: shake .5s; }
+  .custom-scrollbar::-webkit-scrollbar { width:4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background:rgba(148,163,161,.2); border-radius:10px; }
+  @keyframes level-burst { 0%{opacity:0;transform:scale(.8);} 15%{opacity:1;transform:scale(1.05);} 80%{opacity:1;transform:scale(1);} 100%{opacity:0;transform:scale(1.02);} }
+  .level-up-overlay { animation: level-burst 2.2s cubic-bezier(.16,1,.3,1) forwards; }
+  @media (prefers-reduced-motion: reduce) { .pulse-ring,.xp-toast,.stage-transition,.shake,.level-up-overlay { animation:none !important; } }
+</style>
+</head>
+<body class="bg-cockpit-base text-on-surface font-body-md selection:bg-primary/30"
+      x-data="lessonPlayer()" x-cloak>
+
+<!-- steps payload: th:utext writes raw JSON (script elements don't decode HTML entities, so th:text would break JSON.parse) -->
+<script type="application/json" id="steps-data" th:utext="${stepsJson}">[]</script>
+
+<!-- Top Nav -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter h-14 bg-cockpit-base border-b border-hairline">
+  <div class="flex items-center gap-6">
+    <a href="/" class="font-stat-lg text-primary-fixed tracking-tighter text-xl">JAVA_CORE</a>
+    <nav class="hidden md:flex gap-6 items-center">
+      <a href="/" class="font-label-sm text-xs uppercase tracking-wider text-primary border-b-2 border-primary pb-1">Skill Map</a>
+      <a th:href="@{/module/{s}(s=${module.slug})}" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface-variant transition-colors">Docs</a>
+      <a href="/sandbox" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface-variant transition-colors">Sandbox</a>
+    </nav>
+  </div>
+  <div class="flex items-center gap-4">
+    <div class="px-3 py-1 bg-primary-container/10 border border-primary/20 rounded-full text-primary font-label-sm text-xs">
+      <span x-text="totalXp"></span> XP · Lv <span x-text="level"></span>
+    </div>
+  </div>
+</header>
+
+<main class="pt-14 h-screen flex flex-col bg-background">
+  <!-- Progress Rail -->
+  <div class="h-12 w-full flex items-center justify-between px-stage-padding border-b border-hairline bg-cockpit-base/50 backdrop-blur-sm">
+    <div class="flex items-center gap-2">
+      <template x-for="(s, k) in steps" :key="s.id">
+        <div class="w-8 h-1 rounded-full"
+             :class="k < index ? 'bg-primary' : (k === index ? 'bg-primary/20 relative' : 'border border-hairline')">
+          <div x-show="k === index" class="absolute inset-0 bg-primary rounded-full pulse-ring"></div>
+        </div>
+      </template>
+    </div>
+    <div class="font-label-sm text-xs text-ghost-text">
+      STEP <span class="text-primary-fixed-dim" x-text="index + 1">1</span> / <span x-text="steps.length"></span>
+    </div>
+  </div>
+
+  <!-- Split: Stage + Tutor -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Stage -->
+    <section class="flex-[3] p-stage-padding overflow-y-auto custom-scrollbar">
+      <div class="stage-transition bg-panel-slate rounded-xl border border-hairline p-stage-padding shadow-sm"
+           :key="current.id" :class="{ 'shake': wrong }">
+
+        <div class="flex items-center gap-2 mb-4">
+          <span class="px-2 py-0.5 bg-emerald-wash text-primary font-label-sm text-[10px] rounded uppercase tracking-widest border border-primary/20"
+                x-text="current.type"></span>
+          <h1 class="font-headline-md text-xl text-on-surface" x-text="current.title"></h1>
+        </div>
+        <div class="text-on-surface-variant font-body-lg mb-6 md-body" x-html="md(current.body)"></div>
+
+        <!-- Read-only code (demos / predict / fill) -->
+        <div x-show="hasReadonlyCode" class="rounded-xl overflow-hidden border border-hairline bg-surface-container-lowest mb-6">
+          <div class="h-10 bg-elevated-graphite px-4 flex items-center justify-between border-b border-hairline">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm text-secondary">code</span>
+              <span class="font-label-sm text-xs text-ghost-text">snippet.java</span>
+            </div>
+            <!-- Run button only on CODE_DEMO -->
+            <button x-show="current.type === 'CODE_DEMO'" @click="runDemo()" :disabled="busy"
+                    class="flex items-center gap-2 px-3 py-1 bg-emerald-wash hover:bg-primary/20 text-primary rounded disabled:opacity-40 transition-all active:scale-95">
+              <span class="material-symbols-outlined text-sm">play_arrow</span>
+              <span class="font-label-sm text-[11px] uppercase tracking-wider">Run</span>
+            </button>
+          </div>
+          <pre class="p-4 font-code-md text-sm bg-cockpit-base text-[#EAF2EF] whitespace-pre-wrap" x-text="current.code"></pre>
+          <!-- Demo console output -->
+          <div x-show="demoConsole !== null && current.type === 'CODE_DEMO'" class="bg-cockpit-base border-t border-hairline p-3 font-code-md text-xs">
+            <div class="flex items-center gap-2 mb-1 text-ghost-text">
+              <span class="material-symbols-outlined text-[14px] text-primary">terminal</span>
+              <span class="uppercase tracking-widest text-[9px]">Console</span>
+            </div>
+            <pre class="whitespace-pre-wrap" :class="demoConsoleError ? 'text-error' : 'text-primary-fixed-dim opacity-90'" x-text="demoConsole"></pre>
+          </div>
+        </div>
+
+        <!-- Editable code (live_code / fix / checkpoint) -->
+        <div x-show="isCodeStep" class="rounded-xl overflow-hidden border border-hairline bg-surface-container-lowest mb-6">
+          <div class="h-10 bg-elevated-graphite px-4 flex items-center justify-between border-b border-hairline">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm text-secondary">code</span>
+              <span class="font-label-sm text-xs text-ghost-text">Editor.java</span>
+            </div>
+            <button @click="run()" :disabled="busy"
+                    class="flex items-center gap-2 px-3 py-1 bg-emerald-wash hover:bg-primary/20 text-primary rounded disabled:opacity-40 transition-all active:scale-95">
+              <span class="material-symbols-outlined text-sm">play_arrow</span>
+              <span class="font-label-sm text-[11px] uppercase tracking-wider">Run</span>
+            </button>
+          </div>
+          <textarea x-model="code" spellcheck="false" @keydown.tab.prevent="insertTab($event)"
+                    class="w-full p-4 font-code-md text-sm leading-relaxed bg-cockpit-base text-[#EAF2EF] min-h-[280px] focus:outline-none resize-y border-0"></textarea>
+          <!-- Console drawer -->
+          <div x-show="console !== null" class="bg-cockpit-base border-t border-hairline p-3 font-code-md text-xs">
+            <div class="flex items-center gap-2 mb-1 text-ghost-text">
+              <span class="material-symbols-outlined text-[14px] text-primary">terminal</span>
+              <span class="uppercase tracking-widest text-[9px]">Console</span>
+            </div>
+            <pre class="whitespace-pre-wrap" :class="consoleError ? 'text-error' : 'text-primary-fixed-dim opacity-90'" x-text="console"></pre>
+          </div>
+        </div>
+
+        <!-- MCQ options -->
+        <div x-show="current.type === 'MCQ'" class="space-y-2 mb-6">
+          <template x-for="(opt, oi) in mcqOptions" :key="oi">
+            <button @click="selected = oi"
+                    class="w-full text-left px-4 py-3 rounded-lg border transition-all font-body-md"
+                    :class="selected === oi ? 'border-primary bg-emerald-wash text-on-surface' : 'border-hairline text-on-surface-variant hover:border-outline'">
+              <span x-text="opt"></span>
+            </button>
+          </template>
+        </div>
+
+        <!-- Text answer (predict / fill) -->
+        <div x-show="isTextStep" class="mb-6">
+          <label class="block font-label-sm text-xs text-ghost-text mb-2 uppercase tracking-wider"
+                 x-text="current.type === 'PREDICT_OUTPUT' ? 'Your prediction' : 'Your answer'"></label>
+          <input x-model="answer" @keydown.enter="check()" type="text" spellcheck="false"
+                 class="w-full bg-surface-container-lowest border border-hairline rounded-lg py-3 px-4 font-code-md text-sm focus:outline-none focus:border-primary/50"
+                 placeholder="Type here…"/>
+        </div>
+
+        <!-- Feedback -->
+        <div x-show="feedback" class="mb-6 flex items-start gap-2 text-sm"
+             :class="lastCorrect ? 'text-primary' : 'text-fault-red'">
+          <span class="material-symbols-outlined text-base" x-text="lastCorrect ? 'check_circle' : 'error'"></span>
+          <div>
+            <span x-text="feedback"></span>
+            <span x-show="expected" class="block text-ghost-text mt-1">Expected: <code class="text-secondary" x-text="expected"></code></span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-8 flex items-center justify-between relative">
+          <div class="flex gap-4 items-center">
+            <button x-show="!current.done || !lastCorrect" @click="check()" :disabled="busy || !canSubmit"
+                    class="px-8 py-3 bg-primary text-on-primary font-bold rounded-lg flex items-center gap-2 transition-all hover:brightness-110 active:-translate-y-px disabled:opacity-40">
+              <span x-text="submitLabel"></span>
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+            <button x-show="lastCorrect" @click="next()"
+                    class="px-8 py-3 bg-primary text-on-primary font-bold rounded-lg flex items-center gap-2 transition-all hover:brightness-110 active:-translate-y-px">
+              <span x-text="index + 1 < steps.length ? 'Continue' : 'Finish'"></span>
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+            <button @click="askTutor('Hint')"
+                    class="px-6 py-3 border border-hairline text-ghost-text hover:text-on-surface hover:bg-surface-variant font-medium rounded-lg transition-all">
+              Get a hint
+            </button>
+          </div>
+          <div x-show="xpToast" class="xp-toast absolute -top-8 left-12 text-primary font-stat-lg" x-text="'+' + xpToast + ' XP'"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tutor -->
+    <aside class="hidden lg:flex flex-1 border-l border-hairline bg-panel-slate flex-col h-full overflow-hidden">
+      <header class="p-4 border-b border-hairline flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings:'FILL' 1;">smart_toy</span>
+        </div>
+        <h2 class="font-headline-md text-base">Tutor</h2>
+      </header>
+      <div class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4">
+        <!-- Loading dots -->
+        <div x-show="tutorLoading" class="flex items-center gap-1.5 px-4 py-3">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay:0ms"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay:120ms"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay:240ms"></span>
+        </div>
+        <div x-show="!tutorLoading" class="bg-surface-container-high rounded-2xl rounded-tl-none p-4 text-sm text-on-surface-variant border border-hairline/10 leading-relaxed md-body"
+             x-html="md(tutorMsg)"></div>
+        <div class="flex flex-wrap gap-2 pt-2">
+          <button @click="askTutor('Explain this step')" :disabled="tutorLoading"
+                  class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full text-xs text-ghost-text hover:text-primary hover:border-primary transition-all disabled:opacity-40">Explain this step</button>
+          <button @click="askTutor('Hint')" :disabled="tutorLoading"
+                  class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full text-xs text-ghost-text hover:text-primary hover:border-primary transition-all disabled:opacity-40">Hint</button>
+          <button @click="askTutor('Review my code')" :disabled="tutorLoading || !isCodeStep"
+                  class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full text-xs text-ghost-text hover:text-primary hover:border-primary transition-all disabled:opacity-40">Review my code</button>
+        </div>
+      </div>
+      <div class="p-4 border-t border-hairline">
+        <form @submit.prevent="askTutor(customQ); customQ=''" class="flex gap-2">
+          <input x-model="customQ" type="text"
+                 class="flex-1 bg-surface-container-lowest border border-hairline rounded-xl py-2.5 pl-4 pr-3 text-sm focus:outline-none focus:border-primary/50"
+                 placeholder="Ask the tutor…"/>
+          <button type="submit" :disabled="tutorLoading || !customQ.trim()"
+                  class="px-3 py-2 bg-primary/10 border border-primary/30 rounded-xl text-primary disabled:opacity-40 transition-all hover:bg-emerald-wash">
+            <span class="material-symbols-outlined text-sm">send</span>
+          </button>
+        </form>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Level-up celebration overlay -->
+  <div x-show="levelUpShow" x-cloak
+       class="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none">
+    <div class="level-up-overlay flex flex-col items-center gap-3 px-12 py-10 bg-cockpit-base border border-primary/40 rounded-2xl shadow-2xl shadow-primary/20">
+      <span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings:'FILL' 1;">military_tech</span>
+      <p class="font-label-sm text-xs text-primary uppercase tracking-widest">Level up</p>
+      <p class="font-headline-lg text-4xl text-primary-text font-bold" x-text="'Level ' + level"></p>
+      <p class="font-stat-lg text-sm text-ghost-text" x-text="levelUpRank"></p>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <footer class="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-stage-padding h-16 bg-cockpit-base border-t border-hairline">
+    <button @click="prev()" :disabled="index === 0" class="flex flex-col items-center gap-1 text-on-surface-variant opacity-60 hover:opacity-100 disabled:opacity-20 transition-all">
+      <span class="material-symbols-outlined">chevron_left</span>
+      <span class="font-label-sm text-[10px] uppercase">Prev Step</span>
+    </button>
+    <div class="flex items-center gap-4 text-primary-fixed-dim">
+      <span class="material-symbols-outlined text-primary">linear_scale</span>
+      <span class="font-label-sm text-xs uppercase tracking-widest" x-text="module_title"></span>
+    </div>
+    <button @click="next()" :disabled="index + 1 >= steps.length" class="flex flex-col items-center gap-1 text-on-surface-variant opacity-60 hover:opacity-100 disabled:opacity-20 transition-all active:-translate-y-0.5">
+      <span class="material-symbols-outlined">chevron_right</span>
+      <span class="font-label-sm text-[10px] uppercase">Next Step</span>
+    </button>
+  </footer>
+</main>
+
+<script th:inline="javascript">
+  const MODULE_TITLE = /*[[${module.title}]]*/ 'Module';
+  const MODULE_ID = /*[[${module.id}]]*/ null;
+  const INIT_XP = /*[[${state.totalXp}]]*/ 0;
+  const INIT_LEVEL = /*[[${state.currentLevel}]]*/ 1;
+  const RESUME_INDEX = /*[[${resumeStepIndex}]]*/ 0;
+
+  function md(text) {
+    if (!text) return '';
+    if (typeof marked === 'undefined') return text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    try {
+      // marked passes raw HTML through — AI output (tutorMsg) is untrusted
+      // (prompt injection can make the model emit script/onerror HTML).
+      const raw = marked.parse(text, { breaks: true, gfm: true });
+      if (typeof DOMPurify !== 'undefined') {
+        return DOMPurify.sanitize(raw, {
+          ALLOWED_TAGS: ['p','br','strong','em','code','pre','ul','ol','li',
+            'h1','h2','h3','blockquote','table','thead','tbody','tr','th','td','hr'],
+          ALLOWED_ATTR: []
+        });
+      }
+      return raw;
+    } catch (e) { return text; }
+  }
+
+  function lessonPlayer() {
+    return {
+      steps: JSON.parse(document.getElementById('steps-data').textContent || '[]'),
+      index: RESUME_INDEX,
+      module_title: MODULE_TITLE,
+      moduleId: MODULE_ID,
+      totalXp: INIT_XP,
+      level: INIT_LEVEL,
+      // per-step transient
+      code: '', answer: '', selected: null,
+      console: null, consoleError: false,
+      demoConsole: null, demoConsoleError: false,
+      feedback: '', expected: '', lastCorrect: false, wrong: false,
+      xpToast: 0, busy: false,
+      tutorMsg: 'Work through each step. Ask me to explain it, drop a hint, or review your code.',
+      tutorLoading: false,
+      customQ: '',
+      levelUpShow: false,
+      levelUpRank: '',
+
+      init() { this.loadStep(); this.$watch('index', () => this.loadStep()); },
+
+      /** Insert 4 spaces on Tab instead of leaving the editor. */
+      insertTab(e) {
+        const el = e.target, s = el.selectionStart, en = el.selectionEnd;
+        this.code = this.code.slice(0, s) + '    ' + this.code.slice(en);
+        this.$nextTick(() => { el.selectionStart = el.selectionEnd = s + 4; });
+      },
+
+      get current() { return this.steps[this.index] || { type: 'CONCEPT', title: '', body: '', options: null, done: false }; },
+      get isCodeStep() { return ['LIVE_CODE', 'FIX_THE_BUG', 'CHECKPOINT'].includes(this.current.type); },
+      get hasReadonlyCode() { return ['CODE_DEMO', 'PREDICT_OUTPUT', 'FILL_BLANK'].includes(this.current.type) && !!this.current.code; },
+      get isTextStep() { return ['PREDICT_OUTPUT', 'FILL_BLANK'].includes(this.current.type); },
+      get mcqOptions() { try { return JSON.parse(this.current.options || '[]'); } catch (e) { return []; } },
+      get canSubmit() {
+        if (this.current.type === 'MCQ') return this.selected !== null;
+        if (this.isTextStep) return this.answer.trim().length > 0;
+        return true;
+      },
+      get submitLabel() {
+        if (['CONCEPT', 'CODE_DEMO'].includes(this.current.type)) return 'Got it';
+        if (this.isCodeStep) return 'Run & Check';
+        return 'Check';
+      },
+
+      loadStep() {
+        this.code = this.current.code || '';
+        this.answer = ''; this.selected = null;
+        this.console = null; this.consoleError = false;
+        this.demoConsole = null; this.demoConsoleError = false;
+        this.wrong = false;
+        this.lastCorrect = !!this.current.done;
+        this.feedback = this.current.done ? 'You already completed this step correctly.' : '';
+        this.expected = '';
+        this.tutorMsg = 'Work through this step. Ask me to explain it, drop a hint, or review your code.';
+      },
+
+      async runDemo() {
+        this.busy = true; this.demoConsole = 'Running…'; this.demoConsoleError = false;
+        try {
+          const r = await fetch('/api/run', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sourceCode: this.current.code })
+          });
+          const d = await r.json();
+          if (!d.compileSuccess) { this.demoConsoleError = true; this.demoConsole = d.stderr || 'Compilation failed.'; }
+          else { this.demoConsole = (d.stdout || '(no output)') + (d.stderr ? '\n' + d.stderr : ''); }
+        } catch (e) { this.demoConsoleError = true; this.demoConsole = 'Runner error: ' + e; }
+        this.busy = false;
+      },
+
+      async run() {
+        this.busy = true; this.console = 'Running…'; this.consoleError = false;
+        try {
+          const r = await fetch('/api/run', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sourceCode: this.code })
+          });
+          const d = await r.json();
+          if (!d.compileSuccess) { this.consoleError = true; this.console = d.stderr || 'Compilation failed.'; }
+          else { this.consoleError = !!d.stderr; this.console = (d.stdout || '(no output)') + (d.stderr ? '\n' + d.stderr : ''); }
+        } catch (e) { this.consoleError = true; this.console = 'Runner error: ' + e; }
+        this.busy = false;
+      },
+
+      async check() {
+        if (!this.canSubmit || this.busy) return;
+        this.busy = true; this.wrong = false;
+        try {
+          const r = await fetch('/api/steps/' + this.current.id + '/check', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ selectedIndex: this.selected, answer: this.answer, code: this.code })
+          });
+          const d = await r.json();
+          this.lastCorrect = d.correct;
+          this.feedback = d.feedback;
+          this.expected = d.expected || '';
+          if (d.run && d.run.stdout !== undefined) {
+            this.consoleError = !d.run.compileSuccess || !!d.run.stderr;
+            this.console = (d.run.stdout || (d.run.compileSuccess ? '(no output)' : '')) + (d.run.stderr ? '\n' + d.run.stderr : '');
+          }
+          if (d.correct) {
+            const prevLevel = this.level;
+            this.current.done = true;
+            this.totalXp = d.totalXp; this.level = d.level;
+            if (d.xpAwarded > 0) { this.xpToast = d.xpAwarded; setTimeout(() => this.xpToast = 0, 2400); }
+            if (d.level > prevLevel) { this.triggerLevelUp(d.level); }
+          } else {
+            this.wrong = true; setTimeout(() => this.wrong = false, 500);
+          }
+        } catch (e) { this.feedback = 'Something went wrong: ' + e; }
+        this.busy = false;
+      },
+
+      triggerLevelUp(lvl) {
+        const ranks = ['','Bootstrapper','Syntax Scout','Loop Wrangler','Class Architect','Interface Artisan','Generics Adept','Concurrency Knight','Bytecode Sage','JVM Whisperer','Senior Compiler'];
+        this.levelUpRank = ranks[Math.min(lvl, ranks.length - 1)] || 'Senior Compiler';
+        this.levelUpShow = true;
+        setTimeout(() => { this.levelUpShow = false; }, 2400);
+      },
+
+      next() { if (this.index + 1 < this.steps.length) this.index++; else window.location.href = '/'; },
+      prev() { if (this.index > 0) this.index--; },
+
+      async askTutor(mode) {
+        const contextMap = {
+          'Explain this step': 'explain',
+          'Hint': 'hint',
+          'Review my code': 'review'
+        };
+        const contextType = contextMap[mode] || 'ask';
+        const isCustom = !contextMap[mode];
+        this.tutorMsg = '…';
+        this.tutorLoading = true;
+        try {
+          const params = new URLSearchParams();
+          const stepCode = this.current.code ? '\n\nCode:\n```java\n' + this.current.code + '\n```' : '';
+          let msg = isCustom ? mode
+            : (mode === 'Review my code' && this.code)
+              ? 'Please review this code:\n```java\n' + this.code + '\n```'
+              : (mode === 'Explain this step')
+                ? 'Explain this step: ' + (this.current.title || '') + '. ' + (this.current.body || '') + stepCode
+                : 'Give me a hint for this step — "' + (this.current.title || '') + '".' + stepCode + ' Do not give away the answer, just guide my thinking.';
+          params.append('message', msg);
+          params.append('context', contextType);
+          if (this.moduleId) params.append('moduleId', this.moduleId);
+          const r = await fetch('/ai/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+          });
+          const d = await r.json();
+          this.tutorMsg = d.response || 'No response from AI.';
+        } catch (e) {
+          this.tutorMsg = 'Could not reach the AI tutor. Is Ollama running at localhost:11434?';
+        }
+        this.tutorLoading = false;
+      }
+    };
+  }
+</script>
+</body>
+</html>

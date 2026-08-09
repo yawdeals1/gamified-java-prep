@@ -1,0 +1,33 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      # App bind + port
+      BIND_ADDRESS: "0.0.0.0"
+      APP_PORT: "8080"
+      # Prerequisite markdown inside the image
+      PREREQ_PATH: "/app/prerequisite-knowledge"
+      # Deploro Auth-as-a-Service
+      DEPLORO_AUTH_BASE_URL: "${DEPLORO_AUTH_BASE_URL:-}"
+      DEPLORO_AUTH_SLUG: "${DEPLORO_AUTH_SLUG:-}"
+      # AI backend (set via deploro vps set-env)
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-}"
+      OLLAMA_API_KEY: "${OLLAMA_API_KEY:-}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-}"
+      OLLAMA_PROTOCOL: "${OLLAMA_PROTOCOL:-ollama}"
+      # Database (auto-provided by Deploro VPS; entrypoint converts to JDBC)
+      DATABASE_URL_INTERNAL: "${DATABASE_URL_INTERNAL:-}"
+      DATABASE_URL: "${DATABASE_URL:-}"
+      DB_URL: "${DB_URL:-}"
+      DB_USER: "${DB_USER:-}"
+      DB_PASSWORD: "${DB_PASSWORD:-}"
+      JAVA_OPTS: "${JAVA_OPTS:--Xmx1g}"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo ok >&3"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s

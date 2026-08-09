@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="'JAVA_CORE | Challenge Result · ' + ${module.title}">JAVA_CORE | Result</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: {
+                colors: {
+                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
+                    "on-primary": "#003824", "primary-fixed": "#6ffbbe",
+                    "ghost-text": "#8A9895", "on-surface": "#dde4dd", "primary-text": "#EAF2EF",
+                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
+                    "hairline": "rgba(148,163,161,0.14)", "emerald-wash": "rgba(16,185,129,0.12)",
+                    "secondary": "#f5be3c", "fault-red": "#E5533C", "outline-variant": "#3c4a42",
+                    "on-surface-variant": "#bbcabf"
+                },
+                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+                fontFamily: {
+                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-lg": ["Geist", "sans-serif"], "stat-lg": ["JetBrains Mono", "monospace"],
+                    "code-md": ["JetBrains Mono", "monospace"]
+                }
+            }}
+        };
+    </script>
+    <style>body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }</style>
+</head>
+<body class="font-body-md min-h-screen">
+
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a>
+    <div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+        <span class="font-label-sm text-xs text-primary" th:text="${state.totalXp} + ' XP'">0 XP</span>
+    </div>
+</header>
+
+<main class="pt-20 pb-24 px-4 flex flex-col items-center">
+    <div class="w-full max-w-2xl">
+
+        <!-- Result card -->
+        <div class="bg-panel-slate rounded-2xl border p-8 mb-6 text-center relative overflow-hidden"
+             th:classappend="${result.passed} ? 'border-primary/20' : 'border-fault-red/20'">
+            <div class="absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl pointer-events-none"
+                 th:classappend="${result.passed} ? 'bg-primary/5' : 'bg-fault-red/5'"></div>
+
+            <div class="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center"
+                 th:classappend="${result.passed} ? 'bg-emerald-wash border border-primary/30' : 'bg-fault-red/10 border border-fault-red/20'">
+                <span class="material-symbols-outlined text-3xl"
+                      th:classappend="${result.passed} ? 'text-primary' : 'text-fault-red'"
+                      th:text="${result.passed} ? 'military_tech' : 'replay'"
+                      style="font-variation-settings:'FILL' 1;">military_tech</span>
+            </div>
+
+            <h1 class="font-headline-lg text-2xl font-bold mb-2"
+                th:classappend="${result.passed} ? 'text-primary-text' : 'text-fault-red'"
+                th:text="${result.passed} ? 'Challenge Passed!' : 'Not Quite Yet'">Result</h1>
+            <p class="font-body-md text-ghost-text mb-4"
+               th:text="${result.passed} ? 'Great work on ' + ${module.title} + '.' : 'Review the output and try again.'">details</p>
+
+            <div th:if="${result.aiScore != null}"
+                 class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border font-label-sm text-xs uppercase tracking-wider mb-2"
+                 th:classappend="${result.aiScore >= 70} ? 'border-primary/30 bg-emerald-wash text-primary' : 'border-secondary/30 bg-secondary/10 text-secondary'">
+                <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">grade</span>
+                <span th:text="'AI Score: ' + ${result.aiScore} + '/100'">Score</span>
+            </div>
+        </div>
+
+        <!-- Compile output -->
+        <div th:if="${result.compileOutput != null and !result.compileOutput.isEmpty()}"
+             class="bg-panel-slate rounded-xl border border-hairline p-5 mb-4">
+            <h3 class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest mb-3">Compile Output</h3>
+            <pre class="font-code-md text-xs leading-relaxed whitespace-pre-wrap"
+                 th:classappend="${result.compileSuccess} ? 'text-primary' : 'text-fault-red'"
+                 th:text="${result.compileOutput}"></pre>
+        </div>
+
+        <!-- AI feedback -->
+        <div th:if="${result.aiFeedback != null}" class="bg-panel-slate rounded-xl border border-hairline p-5 mb-6">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-primary text-base"
+                      style="font-variation-settings:'FILL' 1;">smart_toy</span>
+                <h3 class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">AI Review</h3>
+            </div>
+            <p class="font-body-md text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap"
+               th:text="${result.aiFeedback}"></p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-3">
+            <a href="/"
+               class="flex-1 px-6 py-3 bg-primary text-on-primary font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 active:-translate-y-px transition-all font-label-sm text-sm">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">map</span>
+                Skill Map
+            </a>
+            <a th:unless="${result.passed}"
+               th:href="@{/module/{slug}/challenge(slug=${module.slug})}"
+               class="flex-1 px-6 py-3 border border-primary/30 text-primary font-medium rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-wash transition-all font-label-sm text-sm">
+                <span class="material-symbols-outlined">replay</span>
+                Try Again
+            </a>
+            <a th:if="${result.passed}"
+               th:href="@{/learn/{slug}(slug=${module.slug})}"
+               class="flex-1 px-6 py-3 border border-hairline text-ghost-text font-medium rounded-xl flex items-center justify-center gap-2 hover:text-on-surface hover:border-outline-variant transition-all font-label-sm text-sm">
+                <span class="material-symbols-outlined">school</span>
+                Review Lesson
+            </a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

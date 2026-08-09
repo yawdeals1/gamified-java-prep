@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="'JAVA_CORE | Docs · ' + ${module.title}">JAVA_CORE | Docs</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: {
+                colors: {
+                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
+                    "on-primary": "#003824", "primary-fixed": "#6ffbbe",
+                    "ghost-text": "#8A9895", "on-surface": "#dde4dd", "primary-text": "#EAF2EF",
+                    "surface-container": "#1a211d", "surface-container-lowest": "#09100c",
+                    "hairline": "rgba(148,163,161,0.14)", "emerald-wash": "rgba(16,185,129,0.12)",
+                    "secondary": "#f5be3c", "fault-red": "#E5533C", "outline-variant": "#3c4a42",
+                    "on-surface-variant": "#bbcabf"
+                },
+                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+                fontFamily: {
+                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-lg": ["Geist", "sans-serif"], "stat-lg": ["JetBrains Mono", "monospace"],
+                    "code-md": ["JetBrains Mono", "monospace"]
+                }
+            }}
+        };
+    </script>
+    <style>
+        body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
+        .docs-content {
+            font-family: 'Geist', sans-serif;
+            font-size: 15px;
+            line-height: 1.75;
+            color: #bbcabf;
+        }
+        .docs-content pre {
+            background: #09100c;
+            border: 1px solid rgba(148,163,161,0.14);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #EAF2EF;
+            margin: 1rem 0;
+        }
+        .docs-content code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            background: rgba(16,185,129,0.12);
+            color: #4edea3;
+            padding: 0.1em 0.4em;
+            border-radius: 0.25rem;
+        }
+        .docs-content pre code { background: none; color: inherit; padding: 0; }
+        .docs-content h1, .docs-content h2, .docs-content h3 {
+            font-family: 'Geist', sans-serif; color: #EAF2EF; font-weight: 600; margin-top: 1.5em; margin-bottom: 0.5em;
+        }
+        .docs-content h1 { font-size: 1.5rem; }
+        .docs-content h2 { font-size: 1.2rem; }
+        .docs-content h3 { font-size: 1rem; }
+        .docs-content p { margin-bottom: 0.75em; }
+        .docs-content ul, .docs-content ol { padding-left: 1.5em; margin-bottom: 0.75em; }
+        .docs-content li { margin-bottom: 0.25em; }
+        .docs-content strong { color: #EAF2EF; font-weight: 600; }
+        .docs-content hr { border-color: rgba(148,163,161,0.14); margin: 1.5em 0; }
+    </style>
+</head>
+<body class="font-body-md min-h-screen">
+
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6">
+        <a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a>
+        <div class="flex items-center gap-2">
+            <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">Docs</span>
+            <span class="font-label-sm text-[10px] text-ghost-text">/</span>
+            <span class="font-label-sm text-[10px] text-primary uppercase tracking-widest"
+                  th:text="${module.title}">Module</span>
+        </div>
+    </div>
+    <div class="flex items-center gap-3">
+        <a th:href="@{/learn/{slug}(slug=${module.slug})}"
+           class="px-4 py-1.5 bg-primary text-on-primary rounded-lg font-label-sm text-xs font-bold hover:brightness-110 transition-all flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">play_arrow</span>
+            Start Lesson
+        </a>
+        <div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+            <span class="font-label-sm text-xs text-primary" th:text="${state.totalXp} + ' XP'">0 XP</span>
+        </div>
+    </div>
+</header>
+
+<main class="pt-20 pb-24 px-6" style="max-width:860px; margin:0 auto;">
+
+    <!-- Module header -->
+    <div class="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+            <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest"
+                  th:text="'Module ' + ${module.orderIndex} + ' · Reference Docs'">Docs</span>
+            <h1 class="font-headline-lg text-3xl text-primary-text font-bold mt-1"
+                th:text="${module.title}">Title</h1>
+            <p class="font-body-md text-sm text-ghost-text mt-1.5" th:text="${module.description}"></p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+            <a th:href="@{/module/{slug}/quiz(slug=${module.slug})}"
+               class="px-4 py-2 border border-hairline rounded-xl font-label-sm text-xs text-ghost-text hover:text-on-surface hover:border-outline-variant transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">quiz</span>
+                Quiz
+            </a>
+            <a th:href="@{/module/{slug}/challenge(slug=${module.slug})}"
+               class="px-4 py-2 border border-hairline rounded-xl font-label-sm text-xs text-ghost-text hover:text-on-surface hover:border-outline-variant transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">code</span>
+                Challenge
+            </a>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="bg-panel-slate rounded-2xl border border-hairline p-8">
+        <div th:if="${module.contentMarkdown != null and !module.contentMarkdown.isEmpty()}"
+             id="docs-md-target" class="docs-content md-body text-sm leading-relaxed"></div>
+        <!-- Fallback: raw pre if no markdown renderer -->
+        <div th:if="${module.contentMarkdown == null or module.contentMarkdown.isEmpty()}"
+             class="text-center py-12">
+            <span class="material-symbols-outlined text-ghost-text/30 text-4xl block mb-3">article</span>
+            <p class="font-label-sm text-xs text-ghost-text">No reference docs for this module yet.</p>
+            <a th:href="@{/learn/{slug}(slug=${module.slug})}"
+               class="mt-4 inline-flex px-5 py-2 bg-primary text-on-primary rounded-xl font-label-sm text-sm font-bold hover:brightness-110 transition-all">
+                Go to Lesson →
+            </a>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex items-center justify-between mt-6">
+        <a href="/"
+           class="flex items-center gap-2 font-label-sm text-xs text-ghost-text hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Skill Map
+        </a>
+        <a th:href="@{/learn/{slug}(slug=${module.slug})}"
+           class="flex items-center gap-2 font-label-sm text-xs text-primary hover:brightness-90 transition-colors">
+            Open Lesson
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+        </a>
+    </div>
+</main>
+<style>
+  .md-body h1,.md-body h2,.md-body h3 { color:#EAF2EF; font-family:Geist,sans-serif; font-weight:600; margin:.8em 0 .4em; border-bottom:1px solid rgba(148,163,161,.1); padding-bottom:.2em; }
+  .md-body h1 { font-size:1.4rem; } .md-body h2 { font-size:1.2rem; } .md-body h3 { font-size:1.05rem; border-bottom:none; }
+  .md-body p { margin:.5em 0; line-height:1.7; color:#bbcabf; }
+  .md-body ul,.md-body ol { padding-left:1.5em; margin:.5em 0; color:#bbcabf; }
+  .md-body li { margin:.25em 0; }
+  .md-body code { background:rgba(78,222,163,.12); color:#4edea3; padding:.1em .35em; border-radius:.2em; font-family:'JetBrains Mono',monospace; font-size:.875em; }
+  .md-body pre { background:#09100c; border:1px solid rgba(148,163,161,.14); border-radius:.5rem; padding:1.1em; overflow-x:auto; margin:.75em 0; }
+  .md-body pre code { background:none; color:#EAF2EF; padding:0; font-size:.82rem; line-height:1.6; }
+  .md-body strong { color:#EAF2EF; font-weight:600; }
+  .md-body em { color:#bbcabf; }
+  .md-body table { border-collapse:collapse; width:100%; margin:.75em 0; font-size:.875em; }
+  .md-body th { background:rgba(78,222,163,.1); color:#4edea3; padding:.45em .8em; text-align:left; border:1px solid rgba(148,163,161,.14); }
+  .md-body td { padding:.4em .8em; border:1px solid rgba(148,163,161,.14); color:#bbcabf; }
+  .md-body blockquote { border-left:2px solid #4edea3; padding-left:1em; color:#8A9895; margin:.5em 0; font-style:italic; }
+  .md-body hr { border:none; border-top:1px solid rgba(148,163,161,.14); margin:1em 0; }
+  .md-body a { color:#4edea3; text-decoration:underline; }
+</style>
+<script th:inline="javascript">
+  const MODULE_MD = /*[[${module.contentMarkdown}]]*/ '';
+  document.addEventListener('DOMContentLoaded', function() {
+    const el = document.getElementById('docs-md-target');
+    if (el && MODULE_MD && typeof marked !== 'undefined') {
+      const raw = marked.parse(MODULE_MD, { gfm: true, breaks: false });
+      if (typeof DOMPurify !== 'undefined') {
+        el.innerHTML = DOMPurify.sanitize(raw, {
+          ALLOWED_TAGS: ['p','br','strong','em','code','pre','ul','ol','li',
+            'h1','h2','h3','blockquote','table','thead','tbody','tr','th','td','hr'],
+          ALLOWED_ATTR: []
+        });
+      } else {
+        el.innerHTML = raw;
+      }
+    }
+  });
+</script>
+</body>
+</html>

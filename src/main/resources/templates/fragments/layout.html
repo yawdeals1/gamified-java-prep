@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="layout(content)">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gamified Java Prep</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <link rel="stylesheet" th:href="@{/css/style.css}">
+    </head>
+    <body class="bg-gray-950 text-gray-100 font-mono antialiased">
+        <div th:replace="~{fragments/layout :: nav}"></div>
+        <main class="max-w-6xl mx-auto px-4 py-6">
+            <div th:replace="${content}"></div>
+        </main>
+        <div th:replace="~{fragments/layout :: xp-badge}"></div>
+        <script th:src="@{/js/app.js}"></script>
+    </body>
+</th:block>
+
+<th:block th:fragment="nav">
+    <nav class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-emerald-400 font-bold text-lg tracking-tight">
+                <span class="text-2xl">&#9881;</span> Gamified Java
+            </a>
+            <div class="flex items-center gap-4 text-sm">
+                <a href="/" class="hover:text-emerald-400 transition-colors">Dashboard</a>
+                <a href="/achievements" class="hover:text-emerald-400 transition-colors">Achievements</a>
+                <a href="/ai/chat" class="hover:text-emerald-400 transition-colors">AI Tutor</a>
+                <form th:if="${currentUser}" method="post" action="/auth/logout" class="inline-flex items-center gap-3">
+                    <span class="text-gray-400 text-xs max-w-[9rem] truncate" th:text="${currentUser.displayName()}">user</span>
+                    <button type="submit" class="text-gray-500 hover:text-red-400 transition-colors">Sign out</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+</th:block>
+<th:block th:fragment="xp-badge">
+    <div th:if="${state}" class="fixed bottom-4 right-4 z-50">
+        <div class="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-xs text-gray-400 shadow-lg">
+            <span class="text-emerald-400 font-bold" th:text="${state.totalXp}">0</span> XP &middot;
+            Lv.<span th:text="${state.currentLevel}">1</span> &middot;
+            Streak: <span th:text="${state.streakCount}">0</span>&#x1F525;
+        </div>
+    </div>
+</th:block>
+</html>

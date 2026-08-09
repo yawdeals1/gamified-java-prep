@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JAVA_CORE | AI Tutor</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: {
+                colors: {
+                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
+                    "on-primary": "#003824", "primary-fixed": "#6ffbbe", "primary-fixed-dim": "#4edea3",
+                    "primary-container": "#10b981", "ghost-text": "#8A9895",
+                    "on-surface": "#dde4dd", "on-surface-variant": "#bbcabf", "primary-text": "#EAF2EF",
+                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
+                    "surface-container-lowest": "#09100c", "elevated-graphite": "#1A2224",
+                    "hairline": "rgba(148,163,161,0.14)", "emerald-wash": "rgba(16,185,129,0.12)",
+                    "secondary": "#f5be3c", "fault-red": "#E5533C", "outline-variant": "#3c4a42"
+                },
+                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+                fontFamily: {
+                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-lg": ["Geist", "sans-serif"], "headline-md": ["Geist", "sans-serif"],
+                    "stat-lg": ["JetBrains Mono", "monospace"], "code-md": ["JetBrains Mono", "monospace"]
+                }
+            }}
+        };
+    </script>
+    <style>
+        body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148,163,161,.2); border-radius: 10px; }
+        @keyframes msg-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .msg-enter { animation: msg-in .25s ease-out; }
+        /* Markdown in AI bubbles */
+        .md-bubble h1,.md-bubble h2,.md-bubble h3 { color:#EAF2EF; font-weight:600; margin:.6em 0 .3em; }
+        .md-bubble h1 { font-size:1.1rem; } .md-bubble h2 { font-size:1rem; } .md-bubble h3 { font-size:.95rem; }
+        .md-bubble p { margin:.35em 0; line-height:1.6; }
+        .md-bubble ul,.md-bubble ol { padding-left:1.3em; margin:.35em 0; }
+        .md-bubble li { margin:.2em 0; }
+        .md-bubble code { background:rgba(78,222,163,.15); color:#4edea3; padding:.1em .3em; border-radius:.2em; font-family:'JetBrains Mono',monospace; font-size:.82em; }
+        .md-bubble pre { background:#09100c; border:1px solid rgba(148,163,161,.14); border-radius:.4rem; padding:.8em; overflow-x:auto; margin:.5em 0; }
+        .md-bubble pre code { background:none; color:#EAF2EF; padding:0; font-size:.8rem; }
+        .md-bubble strong { color:#EAF2EF; font-weight:600; }
+        .md-bubble table { border-collapse:collapse; width:100%; margin:.5em 0; font-size:.85em; }
+        .md-bubble th { background:rgba(78,222,163,.1); color:#4edea3; padding:.35em .6em; border:1px solid rgba(148,163,161,.14); text-align:left; }
+        .md-bubble td { padding:.3em .6em; border:1px solid rgba(148,163,161,.14); }
+        .md-bubble blockquote { border-left:2px solid #4edea3; padding-left:.75em; color:#8A9895; margin:.4em 0; font-style:italic; }
+    </style>
+</head>
+<body class="font-body-md h-screen flex flex-col">
+
+<!-- Header -->
+<header class="flex-none flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6">
+        <a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a>
+        <nav class="hidden md:flex gap-8">
+            <a href="/" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">Skill Map</a>
+            <a href="/achievements" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">Achievements</a>
+            <a href="/ai/chat" class="font-label-sm text-xs uppercase tracking-wider text-primary border-b-2 border-primary pb-1">AI Tutor</a>
+            <a href="/profile" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">Profile</a>
+        </nav>
+    </div>
+    <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-full bg-primary-container/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings:'FILL' 1;">smart_toy</span>
+        </div>
+        <span class="font-label-sm text-xs text-ghost-text">Java Tutor · gemma4</span>
+    </div>
+</header>
+
+<!-- Chat area -->
+<main class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Messages -->
+    <div id="chat-messages" class="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 space-y-4">
+
+        <!-- Greeting -->
+        <div class="flex justify-start">
+            <div class="max-w-[75%] bg-surface-container-high rounded-2xl rounded-tl-none px-5 py-3 text-sm text-on-surface-variant border border-hairline/10 leading-relaxed">
+                Ask me anything about Java — concepts, debugging, Spring Boot, anything. I'll explain without giving away answers to your challenges.
+            </div>
+        </div>
+
+        <!-- History from server -->
+        <div th:each="msg : ${history}"
+             class="flex msg-enter"
+             th:classappend="${msg.role == 'user'} ? 'justify-end' : 'justify-start'">
+            <div class="max-w-[75%] rounded-2xl px-5 py-3 text-sm leading-relaxed border"
+                 th:classappend="${msg.role == 'user'}
+                     ? 'bg-primary text-on-primary rounded-br-sm border-primary/20'
+                     : 'bg-surface-container-high text-on-surface-variant rounded-tl-none border-hairline/10'">
+                <div class="font-body-md"
+                     th:classappend="${msg.role != 'user'} ? 'ai-message-body md-bubble' : ''"
+                     th:text="${msg.message}">message</div>
+                <div class="font-label-sm text-[10px] mt-1.5 opacity-40" th:text="${msg.createdAt}">time</div>
+            </div>
+        </div>
+
+        <!-- Loading indicator (hidden by default) -->
+        <div id="loading-indicator" class="hidden flex justify-start">
+            <div class="bg-surface-container-high rounded-2xl rounded-tl-none px-5 py-3 border border-hairline/10 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay:0ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay:120ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay:240ms"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick-ask chips -->
+    <div class="px-4 pb-3 flex flex-wrap gap-2">
+        <button onclick="quickAsk('What is the difference between int and Integer in Java?')"
+                class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full font-label-sm text-xs text-ghost-text hover:text-primary hover:border-primary transition-all">
+            int vs Integer
+        </button>
+        <button onclick="quickAsk('Explain inheritance vs interfaces in Java')"
+                class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full font-label-sm text-xs text-ghost-text hover:text-primary hover:border-primary transition-all">
+            Inheritance vs Interfaces
+        </button>
+        <button onclick="quickAsk('What does @Entity mean in Spring Boot?')"
+                class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full font-label-sm text-xs text-ghost-text hover:text-primary hover:border-primary transition-all">
+            @Entity
+        </button>
+        <button onclick="quickAsk('How do Java lambdas work?')"
+                class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full font-label-sm text-xs text-ghost-text hover:text-primary hover:border-primary transition-all">
+            Lambdas
+        </button>
+        <button onclick="quickAsk('What causes NullPointerException and how do I fix it?')"
+                class="px-3 py-1.5 bg-cockpit-base border border-hairline rounded-full font-label-sm text-xs text-ghost-text hover:text-primary hover:border-primary transition-all">
+            NullPointerException
+        </button>
+    </div>
+
+    <!-- Input bar -->
+    <div class="flex-none px-4 pb-4">
+        <form id="chat-form" class="flex gap-3 items-end" onsubmit="sendMessage(event)">
+            <textarea id="chat-input" rows="1"
+                      placeholder="Ask a Java question…"
+                      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();document.getElementById('chat-form').dispatchEvent(new Event('submit'));}"
+                      class="flex-1 resize-none bg-surface-container-lowest border border-hairline rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary/50 leading-relaxed max-h-32 overflow-y-auto custom-scrollbar"></textarea>
+            <button type="submit"
+                    class="shrink-0 w-11 h-11 bg-primary rounded-xl flex items-center justify-center hover:brightness-110 active:-translate-y-px transition-all">
+                <span class="material-symbols-outlined text-on-primary text-lg" style="font-variation-settings:'FILL' 1;">send</span>
+            </button>
+        </form>
+    </div>
+</main>
+
+<script>
+    const chatMessages = document.getElementById('chat-messages');
+    const loadingEl = document.getElementById('loading-indicator');
+
+    function mdParse(text) {
+        if (typeof marked !== 'undefined') {
+            try {
+                const raw = marked.parse(text, { gfm: true, breaks: true });
+                // marked passes raw HTML through — AI output is untrusted
+                // (prompt injection can make the model emit <script>/onerror HTML).
+                if (typeof DOMPurify !== 'undefined') {
+                    return DOMPurify.sanitize(raw, {
+                        ALLOWED_TAGS: ['p','br','strong','em','code','pre','ul','ol','li',
+                            'h1','h2','h3','blockquote','table','thead','tbody','tr','th','td','hr'],
+                        ALLOWED_ATTR: []
+                    });
+                }
+                return raw;
+            } catch (e) {}
+        }
+        return text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    }
+
+    // Render any server-rendered AI message history
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.ai-message-body').forEach(function(el) {
+            el.innerHTML = mdParse(el.textContent);
+        });
+        scrollBottom();
+    });
+
+    function scrollBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    scrollBottom();
+
+    function addMessage(role, text) {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex msg-enter ' + (role === 'user' ? 'justify-end' : 'justify-start');
+        const bubble = document.createElement('div');
+        bubble.className = 'max-w-[75%] rounded-2xl px-5 py-3 text-sm leading-relaxed border '
+            + (role === 'user'
+                ? 'bg-primary text-on-primary rounded-br-sm border-primary/20'
+                : 'bg-surface-container-high text-on-surface-variant rounded-tl-none border-hairline/10');
+        const body = document.createElement('div');
+        body.className = 'font-body-md' + (role !== 'user' ? ' md-bubble' : '');
+        if (role === 'user') { body.textContent = text; }
+        else { body.innerHTML = mdParse(text); }
+        bubble.appendChild(body);
+        wrap.appendChild(bubble);
+        chatMessages.insertBefore(wrap, loadingEl);
+        scrollBottom();
+    }
+
+    function setLoading(show) {
+        loadingEl.classList.toggle('hidden', !show);
+        loadingEl.classList.toggle('flex', show);
+        if (show) scrollBottom();
+    }
+
+    function sendMessage(event) {
+        event.preventDefault();
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+        input.value = '';
+        input.style.height = 'auto';
+        addMessage('user', message);
+        setLoading(true);
+        const params = new URLSearchParams();
+        params.append('message', message);
+        params.append('context', 'ask');
+        fetch('/ai/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        })
+        .then(r => r.json())
+        .then(d => { setLoading(false); addMessage('assistant', d.response || 'No response.'); })
+        .catch(() => { setLoading(false); addMessage('assistant', 'Error — is Ollama running at localhost:11434?'); });
+    }
+
+    function quickAsk(question) {
+        document.getElementById('chat-input').value = question;
+        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    }
+
+    // Auto-resize textarea
+    document.getElementById('chat-input').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 128) + 'px';
+    });
+</script>
+</body>
+</html>

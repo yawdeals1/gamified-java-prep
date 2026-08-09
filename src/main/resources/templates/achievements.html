@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JAVA_CORE | Achievements</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: {
+                colors: {
+                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
+                    "on-primary": "#003824", "primary-fixed": "#6ffbbe", "primary-fixed-dim": "#4edea3",
+                    "primary-container": "#10b981", "ghost-text": "#8A9895",
+                    "on-surface": "#dde4dd", "on-surface-variant": "#bbcabf", "primary-text": "#EAF2EF",
+                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
+                    "elevated-graphite": "#1A2224", "hairline": "rgba(148,163,161,0.14)",
+                    "emerald-wash": "rgba(16,185,129,0.12)", "secondary": "#f5be3c",
+                    "fault-red": "#E5533C", "outline-variant": "#3c4a42", "surface-variant": "#2f3632"
+                },
+                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+                fontFamily: {
+                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-lg": ["Geist", "sans-serif"], "headline-md": ["Geist", "sans-serif"],
+                    "stat-lg": ["JetBrains Mono", "monospace"], "code-md": ["JetBrains Mono", "monospace"]
+                }
+            }}
+        };
+    </script>
+    <style>
+        body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
+        @keyframes badge-pop { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .badge-enter { animation: badge-pop .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+    </style>
+</head>
+<body class="font-body-md min-h-screen">
+
+<!-- Header -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6">
+        <a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a>
+        <nav class="hidden md:flex gap-8">
+            <a href="/" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">Skill Map</a>
+            <a href="/achievements" class="font-label-sm text-xs uppercase tracking-wider text-primary border-b-2 border-primary pb-1">Achievements</a>
+            <a href="/ai/chat" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">AI Tutor</a>
+            <a href="/profile" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors">Profile</a>
+        </nav>
+    </div>
+    <div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+        <span class="font-label-sm text-xs text-primary" th:text="${state.totalXp} + ' XP'">0 XP</span>
+    </div>
+</header>
+
+<main class="pt-20 pb-24 px-6" style="max-width:1100px; margin:0 auto;">
+
+    <!-- Title + progress -->
+    <div class="mb-8">
+        <h1 class="font-headline-lg text-3xl text-primary-text mb-1">Achievements</h1>
+        <p class="font-body-md text-ghost-text mb-4"
+           th:text="${unlockedCount} + ' of ' + ${totalCount} + ' badges earned'">0 of 0</p>
+
+        <!-- Progress bar -->
+        <div class="flex items-center gap-4">
+            <div class="flex-1 h-2 bg-surface-container rounded-full overflow-hidden">
+                <div class="h-full bg-primary rounded-full transition-all duration-1000"
+                     th:style="'width:' + (${totalCount > 0 ? (unlockedCount * 100 / totalCount) : 0}) + '%'"></div>
+            </div>
+            <span class="font-label-sm text-xs text-primary shrink-0"
+                  th:text="${totalCount > 0 ? (unlockedCount * 100 / totalCount) : 0} + '%'">0%</span>
+        </div>
+    </div>
+
+    <!-- Badge grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+        <div th:each="ach, iter : ${achievements}"
+             class="rounded-2xl border p-5 transition-all duration-200 badge-enter"
+             th:style="'animation-delay:' + ${iter.index * 50} + 'ms; opacity:0'"
+             th:classappend="${ach.unlocked} ? 'border-primary/20 bg-panel-slate' : 'border-hairline bg-panel-slate/50'">
+
+            <div class="flex items-start gap-4">
+                <!-- Icon circle -->
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                     th:classappend="${ach.unlocked} ? 'bg-emerald-wash border border-primary/30' : 'bg-surface-container border border-hairline'">
+                    <span class="material-symbols-outlined text-xl"
+                          th:classappend="${ach.unlocked} ? 'text-primary' : 'text-ghost-text/40'"
+                          th:text="${ach.materialIcon}"
+                          style="font-variation-settings:'FILL' 1;">emoji_events</span>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <h3 class="font-headline-md text-sm truncate"
+                            th:classappend="${ach.unlocked} ? 'text-primary-text' : 'text-ghost-text'"
+                            th:text="${ach.name}">Achievement Name</h3>
+                        <span th:if="${ach.unlocked}"
+                              class="material-symbols-outlined text-primary text-base shrink-0"
+                              style="font-variation-settings:'FILL' 1;">verified</span>
+                    </div>
+                    <p class="font-label-sm text-xs leading-relaxed"
+                       th:classappend="${ach.unlocked} ? 'text-on-surface-variant' : 'text-ghost-text/50'"
+                       th:text="${ach.description}">Description</p>
+                    <p th:if="${ach.unlocked and ach.unlockedAt != null}"
+                       class="font-label-sm text-[10px] text-primary/60 mt-2"
+                       th:text="'Unlocked ' + ${#temporals.format(ach.unlockedAt, 'MMM d, yyyy')}">date</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP Log -->
+    <div class="mb-8">
+        <h2 class="font-label-sm text-xs text-ghost-text uppercase tracking-widest mb-4">XP History</h2>
+        <div class="bg-panel-slate rounded-2xl border border-hairline overflow-hidden">
+            <div th:if="${logs.empty}" class="px-6 py-8 text-center">
+                <span class="material-symbols-outlined text-ghost-text/30 text-3xl block mb-2">bolt</span>
+                <p class="font-label-sm text-xs text-ghost-text">No XP earned yet — start a lesson.</p>
+            </div>
+            <div th:each="log, iter : ${logs}"
+                 class="flex items-center justify-between px-5 py-3"
+                 th:classappend="${!iter.last} ? 'border-b border-hairline' : ''">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary/60 text-base">bolt</span>
+                    <span class="font-body-md text-sm text-on-surface-variant" th:text="${log.action}">action</span>
+                </div>
+                <span class="font-stat-lg text-sm text-primary font-bold"
+                      th:text="'+' + ${log.xpGained} + ' XP'">+0 XP</span>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

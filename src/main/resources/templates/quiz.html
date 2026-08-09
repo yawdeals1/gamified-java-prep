@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="'JAVA_CORE | Quiz · ' + ${module.title}">JAVA_CORE | Quiz</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: {
+                colors: {
+                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
+                    "on-primary": "#003824", "primary-fixed": "#6ffbbe", "primary-fixed-dim": "#4edea3",
+                    "primary-container": "#10b981", "ghost-text": "#8A9895", "on-surface": "#dde4dd",
+                    "on-surface-variant": "#bbcabf", "primary-text": "#EAF2EF",
+                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
+                    "surface-container-lowest": "#09100c", "elevated-graphite": "#1A2224",
+                    "hairline": "rgba(148,163,161,0.14)", "emerald-wash": "rgba(16,185,129,0.12)",
+                    "secondary": "#f5be3c", "fault-red": "#E5533C", "error": "#ffb4ab",
+                    "outline-variant": "#3c4a42", "surface-variant": "#2f3632"
+                },
+                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+                fontFamily: {
+                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-lg": ["Geist", "sans-serif"], "headline-md": ["Geist", "sans-serif"],
+                    "stat-lg": ["JetBrains Mono", "monospace"], "code-md": ["JetBrains Mono", "monospace"]
+                }
+            }}
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
+        [x-cloak] { display: none !important; }
+        @keyframes slide-in { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .q-enter { animation: slide-in .35s cubic-bezier(.16,1,.3,1); }
+        @keyframes correct-flash { 0%,100% { box-shadow: 0 0 0 0 rgba(78,222,163,0.3); } 50% { box-shadow: 0 0 0 8px rgba(78,222,163,0); } }
+        .correct-pulse { animation: correct-flash .6s; }
+        @keyframes shake { 10%,90%{transform:translateX(-2px);} 30%,70%{transform:translateX(4px);} 50%{transform:translateX(-5px);} }
+        .shake { animation: shake .4s; }
+    </style>
+</head>
+<body class="font-body-md min-h-screen" x-data="quizArena()" x-cloak>
+
+<!-- Questions payload (no answers) -->
+<script type="application/json" id="questions-data" th:utext="${questionsJson}">[]</script>
+
+<!-- Header -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6">
+        <a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a>
+        <span class="font-label-sm text-xs text-ghost-text uppercase tracking-wider"
+              th:text="${module.title}">Module</span>
+    </div>
+    <div class="flex items-center gap-4">
+        <!-- Timer -->
+        <div class="flex items-center gap-2 px-3 py-1 border border-hairline rounded-full">
+            <span class="material-symbols-outlined text-ghost-text text-sm">timer</span>
+            <span class="font-stat-lg text-xs text-ghost-text" x-text="timerDisplay">0:00</span>
+        </div>
+        <!-- XP chip -->
+        <div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+            <span class="font-label-sm text-xs text-primary" th:text="${state.totalXp} + ' XP'">0 XP</span>
+        </div>
+    </div>
+</header>
+
+<!-- Progress rail -->
+<div class="fixed top-14 left-0 w-full z-40 h-1 bg-surface-container">
+    <div class="h-full bg-primary transition-all duration-500" :style="'width:' + progressPct + '%'"></div>
+</div>
+
+<main class="pt-20 pb-32 px-4 flex flex-col items-center min-h-screen">
+    <div class="w-full max-w-2xl">
+
+        <!-- Streak badge -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2 px-3 py-1 bg-panel-slate border border-hairline rounded-full">
+                <span class="font-label-sm text-xs text-ghost-text">
+                    Question <span class="text-primary" x-text="qIndex + 1">1</span>
+                    / <span x-text="questions.length">0</span>
+                </span>
+            </div>
+            <div class="flex items-center gap-2" x-show="streak >= 2">
+                <span class="material-symbols-outlined text-secondary text-lg" style="font-variation-settings:'FILL' 1;">local_fire_department</span>
+                <span class="font-label-sm text-xs text-secondary font-bold" x-text="streak + '× STREAK'"></span>
+            </div>
+        </div>
+
+        <!-- Finished state -->
+        <div x-show="finished" class="q-enter">
+            <form method="post" id="submit-form">
+                <template x-for="(a, qi) in answers" :key="qi">
+                    <input type="hidden" :name="'q_' + questions[qi].id" :value="a"/>
+                </template>
+            </form>
+            <div class="bg-panel-slate rounded-2xl border border-hairline p-8 text-center">
+                <span class="material-symbols-outlined text-primary text-5xl mb-4 block" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                <h2 class="font-headline-lg text-2xl text-primary-text mb-2">Quiz complete!</h2>
+                <p class="font-body-md text-ghost-text mb-2">
+                    <span x-text="correctCount">0</span> / <span x-text="questions.length">0</span> correct
+                    · <span class="text-secondary" x-text="timerDisplay">0:00</span>
+                </p>
+                <p x-show="streak >= 3" class="font-label-sm text-xs text-secondary mb-6">
+                    🔥 <span x-text="'Best streak: ' + bestStreak + '×'"></span>
+                </p>
+                <button @click="$el.closest('form') ? null : null; document.getElementById('submit-form').submit()"
+                        class="px-8 py-3 bg-primary text-on-primary font-bold rounded-xl flex items-center gap-2 mx-auto hover:brightness-110 active:-translate-y-px transition-all">
+                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">send</span>
+                    See Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Active question card -->
+        <div x-show="!finished" class="q-enter" :key="qIndex">
+            <div class="bg-panel-slate rounded-2xl border border-hairline p-8 mb-4"
+                 :class="{ 'shake': wrong }">
+
+                <div class="flex items-center gap-2 mb-5">
+                    <span class="px-2 py-0.5 bg-emerald-wash text-primary font-label-sm text-[10px] rounded uppercase tracking-widest border border-primary/20"
+                          x-text="current.difficulty || 'easy'"></span>
+                </div>
+
+                <p class="font-headline-md text-lg text-primary-text mb-8 leading-relaxed" x-text="current.text"></p>
+
+                <div class="space-y-3">
+                    <template x-for="(opt, oi) in current.options" :key="oi">
+                        <button @click="!answered && selectOption(oi)"
+                                class="w-full text-left px-5 py-4 rounded-xl border transition-all font-body-md text-sm"
+                                :class="{
+                                    'border-hairline text-on-surface-variant hover:border-outline-variant hover:text-on-surface': !answered && selected !== oi,
+                                    'border-primary bg-emerald-wash text-on-surface': !answered && selected === oi,
+                                    'border-primary bg-emerald-wash text-primary correct-pulse': answered && oi === correctIdx,
+                                    'border-fault-red/40 bg-fault-red/5 text-fault-red/70 line-through': answered && selected === oi && oi !== correctIdx,
+                                    'border-hairline opacity-40': answered && oi !== correctIdx && oi !== selected
+                                }">
+                            <div class="flex items-center gap-3">
+                                <span class="font-label-sm text-xs w-5 shrink-0"
+                                      x-text="['A','B','C','D'][oi]"></span>
+                                <span x-text="opt"></span>
+                                <span x-show="answered && oi === correctIdx" class="ml-auto material-symbols-outlined text-primary text-base" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                                <span x-show="answered && selected === oi && oi !== correctIdx" class="ml-auto material-symbols-outlined text-fault-red text-base" style="font-variation-settings:'FILL' 1;">cancel</span>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Explanation (shown after answering) -->
+                <div x-show="answered && explanation" class="mt-6 p-4 rounded-xl bg-surface-container border border-hairline">
+                    <div class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0 mt-0.5">info</span>
+                        <p class="font-body-md text-sm text-on-surface-variant leading-relaxed" x-text="explanation"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next / Submit -->
+            <div class="flex justify-end gap-3">
+                <button x-show="answered"
+                        @click="next()"
+                        class="px-8 py-3 bg-primary text-on-primary font-bold rounded-xl flex items-center gap-2 hover:brightness-110 active:-translate-y-px transition-all">
+                    <span x-text="qIndex + 1 < questions.length ? 'Next' : 'Finish'"></span>
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- Back link -->
+<div class="fixed bottom-6 left-6">
+    <a th:href="@{/learn/{slug}(slug=${module.slug})}"
+       class="flex items-center gap-2 font-label-sm text-xs text-ghost-text hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined text-sm">chevron_left</span>
+        Back to lesson
+    </a>
+</div>
+
+<script th:inline="javascript">
+    const MODULE_SLUG = /*[[${module.slug}]]*/ '';
+
+    function quizArena() {
+        return {
+            questions: [],
+            qIndex: 0,
+            selected: null,
+            answered: false,
+            correctIdx: null,
+            explanation: '',
+            wrong: false,
+            answers: [],
+            correctCount: 0,
+            streak: 0,
+            bestStreak: 0,
+            finished: false,
+            elapsed: 0,
+            _timer: null,
+
+            get current() { return this.questions[this.qIndex] || { text: '', options: [], difficulty: 'easy' }; },
+            get progressPct() { return this.questions.length ? ((this.qIndex) / this.questions.length) * 100 : 0; },
+            get timerDisplay() {
+                const m = Math.floor(this.elapsed / 60);
+                const s = this.elapsed % 60;
+                return m + ':' + String(s).padStart(2, '0');
+            },
+
+            init() {
+                this.questions = JSON.parse(document.getElementById('questions-data').textContent || '[]');
+                this.answers = new Array(this.questions.length).fill(null);
+                this._timer = setInterval(() => this.elapsed++, 1000);
+            },
+
+            selectOption(oi) {
+                if (this.answered) return;
+                this.selected = oi;
+                this.answered = true;
+                this.answers[this.qIndex] = oi;
+                // Fetch the correct answer from server
+                fetch('/api/quiz/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questionId: this.current.id, selectedIndex: oi })
+                })
+                .then(r => r.json())
+                .then(d => {
+                    this.correctIdx = d.correctIndex;
+                    this.explanation = d.explanation || '';
+                    if (d.correct) {
+                        this.correctCount++;
+                        this.streak++;
+                        if (this.streak > this.bestStreak) this.bestStreak = this.streak;
+                    } else {
+                        this.wrong = true;
+                        setTimeout(() => this.wrong = false, 450);
+                        this.streak = 0;
+                    }
+                })
+                .catch(() => {
+                    // fallback: just mark answered without reveal
+                    this.correctIdx = -1;
+                });
+            },
+
+            next() {
+                if (this.qIndex + 1 >= this.questions.length) {
+                    clearInterval(this._timer);
+                    this.finished = true;
+                    return;
+                }
+                this.qIndex++;
+                this.selected = null;
+                this.answered = false;
+                this.correctIdx = null;
+                this.explanation = '';
+            }
+        };
+    }
+</script>
+</body>
+</html>

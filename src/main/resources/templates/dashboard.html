@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JAVA_CORE | Skill Map</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#dde4dd",
+                        "emerald-wash": "rgba(16,185,129,0.12)",
+                        "surface-variant": "#2f3632",
+                        "surface-dim": "#0e1511",
+                        "secondary": "#f5be3c",
+                        "primary-container": "#10b981",
+                        "surface-container-lowest": "#09100c",
+                        "surface-container-low": "#161d19",
+                        "surface": "#0e1511",
+                        "elevated-graphite": "#1A2224",
+                        "surface-tint": "#4edea3",
+                        "primary-fixed-dim": "#4edea3",
+                        "inverse-surface": "#dde4dd",
+                        "cockpit-base": "#0B0F0E",
+                        "primary-fixed": "#6ffbbe",
+                        "inverse-on-surface": "#2b322d",
+                        "error": "#ffb4ab",
+                        "surface-container": "#1a211d",
+                        "on-error": "#690005",
+                        "primary": "#4edea3",
+                        "on-primary": "#003824",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#2f3632",
+                        "outline": "#86948a",
+                        "panel-slate": "#12181A",
+                        "secondary-container": "#c29100",
+                        "on-background": "#dde4dd",
+                        "surface-container-high": "#242c27",
+                        "ghost-text": "#8A9895",
+                        "inverse-primary": "#006c49",
+                        "primary-text": "#EAF2EF",
+                        "background": "#0e1511",
+                        "hairline": "rgba(148,163,161,0.14)",
+                        "outline-variant": "#3c4a42",
+                        "fault-red": "#E5533C",
+                        "surface-bright": "#343b36"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        "2xl": "1rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Geist", "sans-serif"],
+                        "label-sm": ["JetBrains Mono", "monospace"],
+                        "headline-lg": ["Geist", "sans-serif"],
+                        "body-lg": ["Geist", "sans-serif"],
+                        "code-md": ["JetBrains Mono", "monospace"],
+                        "stat-lg": ["JetBrains Mono", "monospace"],
+                        "headline-md": ["Geist", "sans-serif"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", {lineHeight: "1.5", fontWeight: "400"}],
+                        "label-sm": ["12px", {lineHeight: "1.4", letterSpacing: "0.02em", fontWeight: "500"}],
+                        "headline-lg": ["32px", {lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700"}],
+                        "body-lg": ["18px", {lineHeight: "1.6", fontWeight: "400"}],
+                        "code-md": ["14px", {lineHeight: "1.5", fontWeight: "400"}],
+                        "stat-lg": ["20px", {lineHeight: "1.2", fontWeight: "600"}],
+                        "headline-md": ["24px", {lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
+
+        .node-reveal {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+
+        @keyframes pulse-emerald {
+            0%   { box-shadow: 0 0 0 0   rgba(78,222,163,0.4); }
+            70%  { box-shadow: 0 0 0 10px rgba(78,222,163,0);   }
+            100% { box-shadow: 0 0 0 0   rgba(78,222,163,0);   }
+        }
+        .pulse-ring { animation: pulse-emerald 2s infinite; }
+
+        .connector-line {
+            width: 2px;
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            height: 80px;
+            z-index: -1;
+        }
+
+        .asymmetric-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 4rem;
+        }
+        @media (max-width: 1024px) {
+            .asymmetric-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="font-body-md selection:bg-primary selection:text-cockpit-base overflow-x-hidden">
+
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6">
+        <a href="/" class="font-stat-lg text-stat-lg text-primary-fixed tracking-tighter select-none">JAVA_CORE</a>
+        <nav class="hidden md:flex gap-8">
+            <a href="/" class="font-label-sm text-label-sm uppercase tracking-wider text-primary border-b-2 border-primary pb-1">Skill Map</a>
+            <a href="/achievements" class="font-label-sm text-label-sm uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors duration-200">Achievements</a>
+            <a href="/ai/chat" class="font-label-sm text-label-sm uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors duration-200">AI Tutor</a>
+            <a href="/profile" class="font-label-sm text-label-sm uppercase tracking-wider text-ghost-text hover:text-on-surface transition-colors duration-200">Profile</a>
+        </nav>
+    </div>
+    <div class="flex items-center gap-4">
+        <div class="flex gap-3 mr-4">
+            <span class="material-symbols-outlined text-ghost-text cursor-pointer hover:text-primary transition-colors">auto_stories</span>
+            <span class="material-symbols-outlined text-ghost-text cursor-pointer hover:text-primary transition-colors"
+                  th:classappend="${state.streakCount > 0} ? 'text-secondary' : ''"
+                  style="font-variation-settings:'FILL' 1;">local_fire_department</span>
+        </div>
+        <div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+            <span class="font-label-sm text-label-sm text-primary" th:text="${state.totalXp} + ' XP'">0 XP</span>
+        </div>
+    </div>
+</header>
+
+<!-- SideNav -->
+<aside class="fixed left-0 top-14 bottom-0 z-40 flex flex-col bg-panel-slate border-r border-hairline w-20 hover:w-64 transition-all duration-300 group overflow-hidden">
+    <div class="flex flex-col gap-2 p-4 flex-grow">
+        <a href="/" class="flex items-center gap-4 p-3 bg-emerald-wash text-primary rounded-lg transition-all active:scale-95 duration-150">
+            <span class="material-symbols-outlined shrink-0" style="font-variation-settings:'FILL' 1;">inventory_2</span>
+            <span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-medium">Modules</span>
+        </a>
+        <a href="/ai/chat" class="flex items-center gap-4 p-3 text-ghost-text hover:bg-surface-variant hover:text-on-surface rounded-lg transition-all active:scale-95 duration-150">
+            <span class="material-symbols-outlined shrink-0">smart_toy</span>
+            <span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">AI Tutor</span>
+        </a>
+        <a href="/achievements" class="flex items-center gap-4 p-3 text-ghost-text hover:bg-surface-variant hover:text-on-surface rounded-lg transition-all active:scale-95 duration-150">
+            <span class="material-symbols-outlined shrink-0">auto_awesome</span>
+            <span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Achievements</span>
+        </a>
+    </div>
+    <div class="p-4 border-t border-hairline flex flex-col gap-2">
+        <form method="post" action="/reset/progress" onsubmit="return confirm('Reset all progress?')">
+            <button type="submit" class="flex items-center gap-4 p-3 w-full text-ghost-text hover:bg-surface-variant hover:text-fault-red rounded-lg transition-all active:scale-95 duration-150">
+                <span class="material-symbols-outlined shrink-0">restart_alt</span>
+                <span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Reset</span>
+            </button>
+        </form>
+    </div>
+</aside>
+
+<!-- Main Content Stage -->
+<main class="ml-20 mt-14 p-8 min-h-[calc(100vh-3.5rem)] pb-32">
+    <div style="max-width:1400px" class="mx-auto">
+
+        <!-- Greeting + Continue CTA -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+            <div>
+                <h1 class="font-headline-lg text-headline-lg text-primary-text mb-1">
+                    Welcome back, <span th:text="${rank}">Bootstrapper</span>.
+                </h1>
+                <p class="font-body-md text-body-md text-ghost-text" th:if="${continueTarget != null}">
+                    Current Focus:
+                    <span class="text-primary-fixed-dim" th:text="${continueTarget.title}">Module</span>
+                </p>
+                <p class="font-body-md text-body-md text-ghost-text" th:if="${continueTarget == null}">
+                    Pick a module below to begin your journey.
+                </p>
+            </div>
+            <a th:if="${continueTarget != null}"
+               th:href="@{/learn/{slug}(slug=${continueTarget.slug})}"
+               class="px-8 h-14 bg-primary text-on-primary font-bold rounded-xl flex items-center gap-3 hover:brightness-110 active:-translate-y-px transition-all shadow-lg shadow-primary/10">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">play_arrow</span>
+                Continue Loop: Module <span th:text="${continueTarget.order}" class="ml-1">1</span>
+            </a>
+        </div>
+
+        <!-- Asymmetric Dashboard Layout -->
+        <div class="asymmetric-grid">
+
+            <!-- Skill Map Column -->
+            <div class="relative py-12">
+                <div class="flex flex-col items-center gap-20">
+
+                    <div th:each="node, stat : ${nodes}"
+                         class="node-reveal flex items-center gap-6 group"
+                         th:attr="data-offset=${node.offset}">
+
+                        <!-- Node circle (state-specific) -->
+                        <div class="relative">
+
+                            <!-- MASTERED -->
+                            <div th:if="${node.state == 'mastered'}"
+                                 class="w-16 h-16 rounded-full border-4 border-primary flex items-center justify-center bg-emerald-wash transition-transform group-hover:scale-105">
+                                <span class="font-label-sm text-label-sm text-primary" th:text="${node.num}">01</span>
+                            </div>
+
+                            <!-- IN PROGRESS -->
+                            <div th:if="${node.state == 'in_progress'}"
+                                 class="w-16 h-16 rounded-full border-4 border-primary pulse-ring flex items-center justify-center bg-cockpit-base transition-transform group-hover:scale-105 relative">
+                                <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
+                                    <circle class="text-primary opacity-20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="2"/>
+                                    <circle class="text-primary transition-all duration-1000" cx="32" cy="32" fill="transparent" r="28"
+                                            stroke="currentColor" stroke-dasharray="176"
+                                            th:attr="stroke-dashoffset=${node.ringOffset}"
+                                            stroke-width="2"/>
+                                </svg>
+                                <span class="font-label-sm text-label-sm text-primary relative z-10" th:text="${node.num}">04</span>
+                            </div>
+
+                            <!-- AVAILABLE -->
+                            <div th:if="${node.state == 'available'}"
+                                 class="w-16 h-16 rounded-full border border-hairline flex items-center justify-center bg-cockpit-base transition-transform group-hover:scale-105">
+                                <span class="font-label-sm text-label-sm text-ghost-text" th:text="${node.num}">05</span>
+                            </div>
+
+                            <!-- LOCKED -->
+                            <div th:if="${node.state == 'locked'}"
+                                 class="w-16 h-16 rounded-full border border-hairline flex items-center justify-center bg-cockpit-base/50 grayscale transition-transform group-hover:scale-105"
+                                 style="opacity:0.35">
+                                <span class="material-symbols-outlined text-ghost-text text-lg">lock</span>
+                            </div>
+
+                            <!-- Connector line to next node -->
+                            <div th:unless="${stat.last}"
+                                 class="connector-line"
+                                 th:classappend="${node.state == 'mastered'} ? 'bg-primary' : 'bg-hairline'"></div>
+                        </div>
+
+                        <!-- Node label (state-specific) -->
+                        <a th:unless="${node.state == 'locked'}"
+                           th:href="@{/learn/{slug}(slug=${node.slug})}"
+                           class="flex flex-col group-hover:opacity-100 transition-opacity"
+                           th:classappend="${node.state == 'available'} ? 'opacity-60' : (${node.state == 'locked'} ? 'opacity-40' : 'opacity-100')">
+                            <!-- mastered label -->
+                            <span th:if="${node.state == 'mastered'}"
+                                  class="font-label-sm text-label-sm text-primary uppercase"
+                                  th:text="${node.label}">Mastered</span>
+                            <!-- in_progress label with pulse dot -->
+                            <span th:if="${node.state == 'in_progress'}"
+                                  class="font-label-sm text-label-sm text-primary flex items-center gap-2 uppercase">
+                                <span th:text="${node.label}">64% Mastery</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                            </span>
+                            <!-- available / next label -->
+                            <span th:if="${node.state == 'available'}"
+                                  class="font-label-sm text-label-sm text-ghost-text uppercase"
+                                  th:text="${node.label}">Next Step</span>
+                            <span class="font-headline-md text-headline-md text-primary-text mt-0.5" th:text="${node.title}">Module Title</span>
+                            <span class="font-label-sm text-label-sm text-ghost-text mt-0.5 hidden md:block max-w-xs truncate" th:text="${node.description}"></span>
+                        </a>
+                        <!-- locked label (not a link) -->
+                        <div th:if="${node.state == 'locked'}"
+                             class="flex flex-col opacity-40">
+                            <span class="font-label-sm text-label-sm text-ghost-text uppercase">Locked</span>
+                            <span class="font-headline-md text-headline-md text-primary-text mt-0.5" th:text="${node.title}">Module Title</span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Card Sidebar (sticky) -->
+            <div class="sticky top-20 h-fit space-y-6">
+
+                <!-- Player Card -->
+                <div class="bg-panel-slate rounded-2xl p-6 border border-hairline shadow-sm relative overflow-hidden">
+                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="flex flex-col items-center text-center">
+
+                        <!-- Avatar + XP ring -->
+                        <div class="relative w-32 h-32 mb-4">
+                            <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 128 128">
+                                <circle class="text-primary opacity-10" cx="64" cy="64" fill="transparent" r="60" stroke="currentColor" stroke-width="4"/>
+                                <circle class="text-primary transition-all duration-1000" cx="64" cy="64" fill="transparent" r="60"
+                                        stroke="currentColor" stroke-dasharray="377"
+                                        th:attr="stroke-dashoffset=${levelRingOffset}"
+                                        stroke-width="4"/>
+                            </svg>
+                            <div class="absolute inset-2 bg-elevated-graphite rounded-full flex items-center justify-center border border-hairline overflow-hidden">
+                                <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings:'FILL' 1;">person</span>
+                            </div>
+                            <!-- Level badge -->
+                            <div class="absolute bottom-0 right-0 bg-primary text-on-primary font-bold w-10 h-10 rounded-full flex items-center justify-center border-4 border-panel-slate text-sm"
+                                 th:text="${state.currentLevel}">1</div>
+                        </div>
+
+                        <!-- Rank title -->
+                        <h2 class="font-stat-lg text-stat-lg text-primary-text mb-1 uppercase tracking-tighter" th:text="${rank}">Bootstrapper</h2>
+
+                        <!-- Streak + Total XP row -->
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="flex items-center gap-1.5 text-secondary">
+                                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1;">local_fire_department</span>
+                                <span class="font-label-sm text-label-sm font-bold"
+                                      th:text="${state.streakCount} + ' Days'">0 Days</span>
+                            </div>
+                            <div class="h-3 w-px bg-hairline"></div>
+                            <span class="font-label-sm text-label-sm text-ghost-text"
+                                  th:text="${state.totalXp} + ' XP TOTAL'">0 XP TOTAL</span>
+                        </div>
+
+                        <!-- Daily Goal bar -->
+                        <div class="w-full pt-6 border-t border-hairline">
+                            <div class="flex justify-between items-end mb-3">
+                                <span class="font-label-sm text-label-sm text-ghost-text uppercase">Daily Goal</span>
+                                <span class="font-code-md text-code-md text-secondary"
+                                      th:text="${dailyEarned} + ' / ' + ${dailyGoal} + ' XP'">0 / 100 XP</span>
+                            </div>
+                            <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+                                <div class="h-full bg-secondary rounded-full transition-all duration-1000"
+                                     th:style="'width:' + ${dailyPct} + '%'"></div>
+                            </div>
+                        </div>
+
+                        <!-- XP to next level bar -->
+                        <div class="w-full pt-5">
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="font-label-sm text-label-sm text-ghost-text uppercase">
+                                    To Level <span th:text="${state.currentLevel + 1}">2</span>
+                                </span>
+                                <span class="font-code-md text-code-md text-primary"
+                                      th:text="${xpToNext} + ' XP'">0 XP</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                <div class="h-full bg-primary rounded-full transition-all duration-1000"
+                                     th:style="'width:' + ${levelPct} + '%'"></div>
+                            </div>
+                        </div>
+
+                        <!-- Module progress -->
+                        <div class="w-full pt-4 flex items-center justify-between">
+                            <span class="font-label-sm text-label-sm text-ghost-text uppercase">Modules Mastered</span>
+                            <span class="font-code-md text-code-md text-primary"
+                                  th:text="${masteredCount} + ' / ' + ${totalModules}">0 / 9</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Recent Achievement Card -->
+                <div th:if="${recentAchievement != null}" class="bg-panel-slate rounded-2xl p-6 border border-hairline overflow-hidden">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">auto_awesome</span>
+                        <span class="font-label-sm text-label-sm text-primary uppercase">Recent Achievement</span>
+                    </div>
+                    <p class="font-body-md text-body-md text-primary-text mb-1" th:text="${recentAchievement.name}">Achievement</p>
+                    <p class="font-label-sm text-label-sm text-ghost-text" th:text="${recentAchievement.description}">Description</p>
+                </div>
+
+                <div th:if="${recentAchievement == null}" class="bg-panel-slate rounded-2xl p-6 border border-hairline overflow-hidden">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-ghost-text/40">auto_awesome</span>
+                        <span class="font-label-sm text-label-sm text-ghost-text/60 uppercase">No Badges Yet</span>
+                    </div>
+                    <p class="font-label-sm text-label-sm text-ghost-text">Complete your first lesson to earn your first badge.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Staggered reveal: pop each node up from translateY offset, preserving the horizontal offset
+        document.querySelectorAll('.node-reveal').forEach((node, i) => {
+            const offset = parseInt(node.dataset.offset || '0', 10);
+            setTimeout(() => {
+                node.style.opacity = '1';
+                node.style.transform = `translateX(${offset}px)`;
+                node.style.transition = 'opacity 0.6s cubic-bezier(0.34,1.56,0.64,1), transform 0.6s cubic-bezier(0.34,1.56,0.64,1)';
+            }, i * 120);
+        });
+    });
+</script>
+</body>
+</html>
