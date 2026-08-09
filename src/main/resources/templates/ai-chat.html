@@ -1,42 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>JAVA_CORE | AI Tutor</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link rel="stylesheet" href="/css/app.css"/>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
     <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/></noscript>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: { extend: {
-                colors: {
-                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
-                    "on-primary": "#003824", "primary-fixed": "#6ffbbe", "primary-fixed-dim": "#4edea3",
-                    "primary-container": "#10b981", "ghost-text": "#8A9895",
-                    "on-surface": "#dde4dd", "on-surface-variant": "#bbcabf", "primary-text": "#EAF2EF",
-                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
-                    "surface-container-lowest": "#09100c", "elevated-graphite": "#1A2224",
-                    "hairline": "rgba(148,163,161,0.14)", "emerald-wash": "rgba(16,185,129,0.12)",
-                    "secondary": "#f5be3c", "fault-red": "#E5533C", "outline-variant": "#3c4a42"
-                },
-                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
-                fontFamily: {
-                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
-                    "headline-lg": ["Geist", "sans-serif"], "headline-md": ["Geist", "sans-serif"],
-                    "stat-lg": ["JetBrains Mono", "monospace"], "code-md": ["JetBrains Mono", "monospace"]
-                }
-            }}
-        };
-    </script>
+    
     <style>
         body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -76,7 +53,7 @@
         <div class="w-7 h-7 rounded-full bg-primary-container/20 flex items-center justify-center">
             <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings:'FILL' 1;">smart_toy</span>
         </div>
-        <span class="font-label-sm text-xs text-ghost-text">Java Tutor · gemma4</span>
+        <span class="font-label-sm text-xs text-ghost-text">Java Tutor Â· gemma4</span>
     </div>
     <div th:replace="~{fragments/session :: session}"></div>
 </header>
@@ -90,7 +67,7 @@
         <!-- Greeting -->
         <div class="flex justify-start">
             <div class="max-w-[75%] bg-surface-container-high rounded-2xl rounded-tl-none px-5 py-3 text-sm text-on-surface-variant border border-hairline/10 leading-relaxed">
-                Ask me anything about Java — concepts, debugging, Spring Boot, anything. I'll explain without giving away answers to your challenges.
+                Ask me anything about Java â€” concepts, debugging, Spring Boot, anything. I'll explain without giving away answers to your challenges.
             </div>
         </div>
 
@@ -147,7 +124,7 @@
     <div class="flex-none px-4 pb-4">
         <form id="chat-form" class="flex gap-3 items-end" onsubmit="sendMessage(event)">
             <textarea id="chat-input" rows="1"
-                      placeholder="Ask a Java question…"
+                      placeholder="Ask a Java questionâ€¦"
                       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();document.getElementById('chat-form').dispatchEvent(new Event('submit'));}"
                       class="flex-1 resize-none bg-surface-container-lowest border border-hairline rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary/50 leading-relaxed max-h-32 overflow-y-auto custom-scrollbar"></textarea>
             <button type="submit"
@@ -166,7 +143,7 @@
         if (typeof marked !== 'undefined') {
             try {
                 const raw = marked.parse(text, { gfm: true, breaks: true });
-                // marked passes raw HTML through — AI output is untrusted
+                // marked passes raw HTML through â€” AI output is untrusted
                 // (prompt injection can make the model emit <script>/onerror HTML).
                 if (typeof DOMPurify !== 'undefined') {
                     return DOMPurify.sanitize(raw, {
@@ -237,7 +214,7 @@
         })
         .then(r => r.json())
         .then(d => { setLoading(false); addMessage('assistant', d.response || 'No response.'); })
-        .catch(() => { setLoading(false); addMessage('assistant', 'Error — is Ollama running at localhost:11434?'); });
+        .catch(() => { setLoading(false); addMessage('assistant', 'Error â€” is Ollama running at localhost:11434?'); });
     }
 
     function quickAsk(question) {

@@ -1,36 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="'JAVA_CORE | Docs · ' + ${module.title}">JAVA_CORE | Docs</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <title th:text="'JAVA_CORE | Docs Â· ' + ${module.title}">JAVA_CORE | Docs</title>
+    <link rel="stylesheet" href="/css/app.css"/>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: { extend: {
-                colors: {
-                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
-                    "on-primary": "#003824", "primary-fixed": "#6ffbbe",
-                    "ghost-text": "#8A9895", "on-surface": "#dde4dd", "primary-text": "#EAF2EF",
-                    "surface-container": "#1a211d", "surface-container-lowest": "#09100c",
-                    "hairline": "rgba(148,163,161,0.14)", "emerald-wash": "rgba(16,185,129,0.12)",
-                    "secondary": "#f5be3c", "fault-red": "#E5533C", "outline-variant": "#3c4a42",
-                    "on-surface-variant": "#bbcabf"
-                },
-                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
-                fontFamily: {
-                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
-                    "headline-lg": ["Geist", "sans-serif"], "stat-lg": ["JetBrains Mono", "monospace"],
-                    "code-md": ["JetBrains Mono", "monospace"]
-                }
-            }}
-        };
-    </script>
+    
     <style>
         body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
         .docs-content {
@@ -103,7 +82,7 @@
     <div class="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
             <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest"
-                  th:text="'Module ' + ${module.orderIndex} + ' · Reference Docs'">Docs</span>
+                  th:text="'Module ' + ${module.orderIndex} + ' Â· Reference Docs'">Docs</span>
             <h1 class="font-headline-lg text-3xl text-primary-text font-bold mt-1"
                 th:text="${module.title}">Title</h1>
             <p class="font-body-md text-sm text-ghost-text mt-1.5" th:text="${module.description}"></p>
@@ -133,7 +112,7 @@
             <p class="font-label-sm text-xs text-ghost-text">No reference docs for this module yet.</p>
             <a th:href="@{/learn/{slug}(slug=${module.slug})}"
                class="mt-4 inline-flex px-5 py-2 bg-primary text-on-primary rounded-xl font-label-sm text-sm font-bold hover:brightness-110 transition-all">
-                Go to Lesson →
+                Go to Lesson â†’
             </a>
         </div>
     </div>

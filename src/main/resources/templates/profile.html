@@ -1,39 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>JAVA_CORE | Profile</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="stylesheet" href="/css/app.css"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
     <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/></noscript>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: { extend: {
-                colors: {
-                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
-                    "on-primary": "#003824", "primary-fixed": "#6ffbbe", "primary-fixed-dim": "#4edea3",
-                    "ghost-text": "#8A9895", "on-surface": "#dde4dd", "primary-text": "#EAF2EF",
-                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
-                    "elevated-graphite": "#1A2224", "hairline": "rgba(148,163,161,0.14)",
-                    "emerald-wash": "rgba(16,185,129,0.12)", "secondary": "#f5be3c",
-                    "fault-red": "#E5533C", "outline-variant": "#3c4a42",
-                    "on-surface-variant": "#bbcabf", "surface-variant": "#2f3632"
-                },
-                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
-                fontFamily: {
-                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
-                    "headline-lg": ["Geist", "sans-serif"], "headline-md": ["Geist", "sans-serif"],
-                    "stat-lg": ["JetBrains Mono", "monospace"], "code-md": ["JetBrains Mono", "monospace"]
-                }
-            }}
-        };
-    </script>
+    
     <style>
         body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
         @keyframes bar-fill { from { width: 0; } to { width: var(--target-w); } }
@@ -252,7 +229,7 @@
         <div class="bg-panel-slate rounded-2xl border border-hairline overflow-hidden">
             <div th:if="${logs.empty}" class="px-6 py-10 text-center">
                 <span class="material-symbols-outlined text-ghost-text/30 text-4xl block mb-3">bolt</span>
-                <p class="font-label-sm text-xs text-ghost-text">No XP earned yet — start a lesson to begin.</p>
+                <p class="font-label-sm text-xs text-ghost-text">No XP earned yet â€” start a lesson to begin.</p>
             </div>
             <div th:each="log, iter : ${logs}"
                  class="flex items-center justify-between px-5 py-3.5"

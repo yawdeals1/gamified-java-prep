@@ -1,39 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>JAVA_CORE | Sandbox</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="stylesheet" href="/css/app.css"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
     <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/></noscript>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: { extend: {
-                colors: {
-                    "cockpit-base": "#0B0F0E", "panel-slate": "#12181A", "primary": "#4edea3",
-                    "on-primary": "#003824", "primary-fixed": "#6ffbbe",
-                    "ghost-text": "#8A9895", "on-surface": "#dde4dd", "primary-text": "#EAF2EF",
-                    "surface-container": "#1a211d", "surface-container-high": "#242c27",
-                    "surface-container-lowest": "#09100c", "hairline": "rgba(148,163,161,0.14)",
-                    "emerald-wash": "rgba(16,185,129,0.12)", "secondary": "#f5be3c",
-                    "fault-red": "#E5533C", "outline-variant": "#3c4a42",
-                    "on-surface-variant": "#bbcabf"
-                },
-                borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
-                fontFamily: {
-                    "body-md": ["Geist", "sans-serif"], "label-sm": ["JetBrains Mono", "monospace"],
-                    "headline-lg": ["Geist", "sans-serif"], "stat-lg": ["JetBrains Mono", "monospace"],
-                    "code-md": ["JetBrains Mono", "monospace"]
-                }
-            }}
-        };
-    </script>
+    
     <style>
         body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
         #editor {
@@ -124,7 +101,7 @@
             <div class="flex items-center gap-2 flex-none">
                 <span class="material-symbols-outlined text-primary text-sm"
                       style="font-variation-settings:'FILL' 0;">code</span>
-                <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">Editor · Main.java</span>
+                <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">Editor Â· Main.java</span>
                 <span id="compile-badge" class="hidden font-label-sm text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider"></span>
             </div>
             <textarea id="editor" spellcheck="false"
@@ -217,10 +194,10 @@ public class Main {
         const b = document.getElementById('compile-badge');
         b.classList.remove('hidden');
         if (ok) {
-            b.textContent = '✓ compiled';
+            b.textContent = 'âœ“ compiled';
             b.className = 'font-label-sm text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider bg-emerald-wash text-primary border border-primary/20';
         } else {
-            b.textContent = '✗ error';
+            b.textContent = 'âœ— error';
             b.className = 'font-label-sm text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider bg-fault-red/10 text-fault-red border border-fault-red/20';
         }
     }
@@ -246,7 +223,7 @@ public class Main {
         if (!code) return;
         setRunLoading(true);
         const out = document.getElementById('console-out');
-        out.textContent = 'Running…';
+        out.textContent = 'Runningâ€¦';
         out.style.color = '#8A9895';
         try {
             const r = await fetch('/api/run', {
@@ -274,7 +251,7 @@ public class Main {
 
     async function aiCall(prompt) {
         const aiOut = document.getElementById('ai-out');
-        aiOut.innerHTML = '<div class="flex items-center gap-2 text-ghost-text/50"><span class="material-symbols-outlined text-sm spin">progress_activity</span><span class="font-label-sm text-xs">Thinking…</span></div>';
+        aiOut.innerHTML = '<div class="flex items-center gap-2 text-ghost-text/50"><span class="material-symbols-outlined text-sm spin">progress_activity</span><span class="font-label-sm text-xs">Thinkingâ€¦</span></div>';
         const code = document.getElementById('editor').value;
         const params = new URLSearchParams();
         params.append('message', prompt + (code ? '\n\nCode:\n```java\n' + code + '\n```' : ''));
@@ -288,7 +265,7 @@ public class Main {
             const d = await r.json();
             aiOut.textContent = d.response || 'No response from AI.';
         } catch {
-            aiOut.textContent = 'Error — is Ollama running at localhost:11434?';
+            aiOut.textContent = 'Error â€” is Ollama running at localhost:11434?';
         }
     }
 

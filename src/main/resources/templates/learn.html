@@ -1,47 +1,21 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html class="dark" lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title th:text="'JAVA_CORE | ' + ${module.title}">JAVA_CORE | Lesson Player</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link rel="preconnect" href="https://cdn.tailwindcss.com">
+<link rel="stylesheet" href="/css/app.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/></noscript>
-<script>
-  tailwind.config = {
-    darkMode: "class",
-    theme: { extend: {
-      colors: {
-        "on-surface": "#dde4dd", "emerald-wash": "rgba(16,185,129,0.12)", "surface-variant": "#2f3632",
-        "surface-dim": "#0e1511", "secondary": "#f5be3c", "primary-container": "#10b981",
-        "surface-container-lowest": "#09100c", "surface-container-low": "#161d19", "surface": "#0e1511",
-        "elevated-graphite": "#1A2224", "surface-tint": "#4edea3", "tertiary": "#ffb3af",
-        "cockpit-base": "#0B0F0E", "primary-fixed-dim": "#4edea3", "error": "#ffb4ab",
-        "surface-container": "#1a211d", "primary": "#4edea3", "on-primary": "#003824",
-        "error-container": "#93000a", "outline": "#86948a", "panel-slate": "#12181A",
-        "secondary-container": "#c29100", "primary-fixed": "#6ffbbe", "on-primary-container": "#00422b",
-        "surface-container-high": "#242c27", "ghost-text": "#8A9895", "primary-text": "#EAF2EF",
-        "background": "#0e1511", "hairline": "rgba(148,163,161,0.14)", "outline-variant": "#3c4a42",
-        "on-surface-variant": "#bbcabf", "fault-red": "#E5533C", "on-primary-fixed": "#002113"
-      },
-      borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
-      spacing: { gutter: "1.5rem", "max-width": "1400px", "stage-padding": "2rem" },
-      fontFamily: {
-        "body-md": ["Geist"], "label-sm": ["JetBrains Mono"], "headline-lg": ["Geist"],
-        "body-lg": ["Geist"], "code-md": ["JetBrains Mono"], "stat-lg": ["JetBrains Mono"], "headline-md": ["Geist"]
-      }
-    } }
-  };
-</script>
+
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
 <style>
-  /* Markdown prose — dark cockpit theme */
+  /* Markdown prose â€” dark cockpit theme */
   .md-body h1,.md-body h2,.md-body h3 { color:#EAF2EF; font-family:Geist,sans-serif; font-weight:600; margin:.7em 0 .35em; }
   .md-body h1 { font-size:1.25rem; } .md-body h2 { font-size:1.1rem; } .md-body h3 { font-size:1rem; }
   .md-body p { margin:.45em 0; line-height:1.6; }
@@ -91,7 +65,7 @@
   </div>
   <div class="flex items-center gap-4">
 <div class="px-3 py-1 bg-primary-container/10 border border-primary/20 rounded-full text-primary font-label-sm text-xs">
-      <span x-text="totalXp"></span> XP � Lv <span x-text="level"></span>
+      <span x-text="totalXp"></span> XP ï¿½ Lv <span x-text="level"></span>
     </div>
     <div th:replace="~{fragments/session :: session}"></div>
   </div>
@@ -194,7 +168,7 @@
                  x-text="current.type === 'PREDICT_OUTPUT' ? 'Your prediction' : 'Your answer'"></label>
           <input x-model="answer" @keydown.enter="check()" type="text" spellcheck="false"
                  class="w-full bg-surface-container-lowest border border-hairline rounded-lg py-3 px-4 font-code-md text-sm focus:outline-none focus:border-primary/50"
-                 placeholder="Type here…"/>
+                 placeholder="Type hereâ€¦"/>
         </div>
 
         <!-- Feedback -->
@@ -260,7 +234,7 @@
         <form @submit.prevent="askTutor(customQ); customQ=''" class="flex gap-2">
           <input x-model="customQ" type="text"
                  class="flex-1 bg-surface-container-lowest border border-hairline rounded-xl py-2.5 pl-4 pr-3 text-sm focus:outline-none focus:border-primary/50"
-                 placeholder="Ask the tutor…"/>
+                 placeholder="Ask the tutorâ€¦"/>
           <button type="submit" :disabled="tutorLoading || !customQ.trim()"
                   class="px-3 py-2 bg-primary/10 border border-primary/30 rounded-xl text-primary disabled:opacity-40 transition-all hover:bg-emerald-wash">
             <span class="material-symbols-outlined text-sm">send</span>
@@ -309,7 +283,7 @@
     if (!text) return '';
     if (typeof marked === 'undefined') return text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
     try {
-      // marked passes raw HTML through — AI output (tutorMsg) is untrusted
+      // marked passes raw HTML through â€” AI output (tutorMsg) is untrusted
       // (prompt injection can make the model emit script/onerror HTML).
       const raw = marked.parse(text, { breaks: true, gfm: true });
       if (typeof DOMPurify !== 'undefined') {
@@ -381,7 +355,7 @@
       },
 
       async runDemo() {
-        this.busy = true; this.demoConsole = 'Running…'; this.demoConsoleError = false;
+        this.busy = true; this.demoConsole = 'Runningâ€¦'; this.demoConsoleError = false;
         try {
           const r = await fetch('/api/run', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -395,7 +369,7 @@
       },
 
       async run() {
-        this.busy = true; this.console = 'Running…'; this.consoleError = false;
+        this.busy = true; this.console = 'Runningâ€¦'; this.consoleError = false;
         try {
           const r = await fetch('/api/run', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -455,7 +429,7 @@
         };
         const contextType = contextMap[mode] || 'ask';
         const isCustom = !contextMap[mode];
-        this.tutorMsg = '…';
+        this.tutorMsg = 'â€¦';
         this.tutorLoading = true;
         try {
           const params = new URLSearchParams();
@@ -465,7 +439,7 @@
               ? 'Please review this code:\n```java\n' + this.code + '\n```'
               : (mode === 'Explain this step')
                 ? 'Explain this step: ' + (this.current.title || '') + '. ' + (this.current.body || '') + stepCode
-                : 'Give me a hint for this step — "' + (this.current.title || '') + '".' + stepCode + ' Do not give away the answer, just guide my thinking.';
+                : 'Give me a hint for this step â€” "' + (this.current.title || '') + '".' + stepCode + ' Do not give away the answer, just guide my thinking.';
           params.append('message', msg);
           params.append('context', contextType);
           if (this.moduleId) params.append('moduleId', this.moduleId);
