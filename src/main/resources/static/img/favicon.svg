@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Gamified Java Prep">
+  <!-- A compiler prompt: angular brace depth mark plus decisive terminal chevron. -->
+  <rect width="512" height="512" fill="#0B0F0F"/>
+  <g fill="none" stroke="#4EDEA3" stroke-width="38" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M214 112H158V196H190V232H216V280H190V316H158V400H214"/>
+    <path d="M274 166L368 256L274 346"/>
+  </g>
+</svg>
