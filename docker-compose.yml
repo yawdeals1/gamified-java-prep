@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     restart: unless-stopped
     environment:
       # App bind + port
@@ -18,7 +18,7 @@ services:
       OLLAMA_API_KEY: "${OLLAMA_API_KEY:-}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-}"
       OLLAMA_PROTOCOL: "${OLLAMA_PROTOCOL:-ollama}"
-      # Data store — Deploro Studio REST API (deploro migrate schema + tokens)
+      # Data store â€” Deploro Studio REST API (deploro migrate schema + tokens)
       DEPLORO_API_URL: "${DEPLORO_API_URL:-}"
       DEPLORO_API_TOKEN: "${DEPLORO_API_TOKEN:-}"
       JAVA_OPTS: "${JAVA_OPTS:--Xmx1g}"
