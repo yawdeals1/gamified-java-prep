@@ -1,39 +1,25 @@
 package com.gamifiedjava.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "module_progress")
 public class ModuleProgress {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "module_id")
     private CourseModule module;
 
-    @Column(length = 20)
     private String status = "locked";
 
-    @Column(name = "quiz_score")
     private Integer quizScore = 0;
 
-    @Column(name = "quiz_attempts")
     private Integer quizAttempts = 0;
 
-    @Column(name = "challenge_passed")
     private Boolean challengePassed = false;
 
-    @Column(name = "challenge_attempts")
     private Integer challengeAttempts = 0;
 
-    @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     public ModuleProgress() {}

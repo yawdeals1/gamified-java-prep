@@ -1,25 +1,17 @@
 package com.gamifiedjava.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "achievement")
 public class Achievement {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(length = 500)
     private String description;
 
     private String icon;
 
-    @Column(name = "unlocked_at")
     private LocalDateTime unlockedAt;
 
     public Achievement() {}

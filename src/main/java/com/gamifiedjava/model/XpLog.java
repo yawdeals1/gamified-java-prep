@@ -1,26 +1,17 @@
 package com.gamifiedjava.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "xp_log")
 public class XpLog {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, length = 100)
     private String action;
 
-    @Column(name = "xp_gained", nullable = false)
     private Integer xpGained;
 
-    @Column(length = 500)
     private String note;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public XpLog() {}

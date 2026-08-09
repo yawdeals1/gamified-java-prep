@@ -6,7 +6,6 @@ import com.gamifiedjava.repository.ModuleProgressRepository;
 import com.gamifiedjava.repository.ModuleRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,8 +29,6 @@ public class ModuleService {
         this.progressRepository = progressRepository;
         this.gamificationService = gamificationService;
     }
-
-    @Transactional
     public void seedModules() {
         if (moduleRepository.count() > 0) {
             ensureProgressRows();
@@ -98,8 +95,6 @@ public class ModuleService {
     public ModuleProgress getProgress(Integer moduleId) {
         return progressRepository.findByModuleId(moduleId).orElse(null);
     }
-
-    @Transactional
     public void unlockNextModule(Integer currentModuleId) {
         CourseModule current = moduleRepository.findById(currentModuleId).orElse(null);
         if (current == null) return;
@@ -114,8 +109,6 @@ public class ModuleService {
             progressRepository.save(nextProg);
         }
     }
-
-    @Transactional
     public ModuleProgress completeModuleReading(Integer moduleId) {
         ModuleProgress prog = getProgress(moduleId);
         if (prog != null && ("available".equals(prog.getStatus()) || "reading".equals(prog.getStatus()))) {
@@ -126,8 +119,6 @@ public class ModuleService {
         }
         return prog;
     }
-
-    @Transactional
     public ModuleProgress markModuleComplete(Integer moduleId) {
         ModuleProgress prog = getProgress(moduleId);
         if (prog != null) {

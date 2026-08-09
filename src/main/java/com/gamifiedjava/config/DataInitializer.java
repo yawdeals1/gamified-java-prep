@@ -9,7 +9,6 @@ import com.gamifiedjava.service.LessonStepService;
 import com.gamifiedjava.service.ModuleService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -33,7 +32,6 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     @Override
-    @Transactional
     public void run(String... args) {
         moduleService.seedModules();
         gamificationService.seedAchievements();
@@ -89,7 +87,7 @@ public class DataInitializer implements CommandLineRunner {
         saveQ(m, "Which keyword makes a variable unchangeable after assignment?", new String[]{"static", "constant", "final", "const"}, 2, "The `final` keyword prevents reassignment. By convention final variables use ALL_CAPS naming.", "easy");
         saveQ(m, "What will `var name = \"Alice\";` do?", new String[]{"Create a dynamically-typed variable", "Cause a compile error", "Infer that name is a String at compile time", "Create a variable with no type"}, 2, "var infers the type at compile time. name is still fixed as a String.", "medium");
         saveQ(m, "Which of the following is NOT a primitive type in Java?", new String[]{"boolean", "String", "char", "double"}, 1, "String is a class (reference type), not a primitive. The eight primitives are: byte, short, int, long, float, double, boolean, char.", "easy");
-        saveQ(m, "What happens if you try to assign a String to an int variable?", new String[]{"The String is converted to a number automatically", "The program crashes at runtime", "The code does not compile", "The int becomes null"}, 2, "Java is statically typed — once a variable is declared as int, it can only hold int values.", "easy");
+        saveQ(m, "What happens if you try to assign a String to an int variable?", new String[]{"The String is converted to a number automatically", "The program crashes at runtime", "The code does not compile", "The int becomes null"}, 2, "Java is statically typed â€” once a variable is declared as int, it can only hold int values.", "easy");
         saveQ(m, "Spring Boot uses wrapper types like Long and Integer for entity fields because:", new String[]{"They are faster than primitives", "They can be null, representing 'no value provided'", "They use less memory", "Databases require them"}, 1, "Wrapper types allow null in database columns where a value might not be provided.", "medium");
     }
 
@@ -109,7 +107,7 @@ public class DataInitializer implements CommandLineRunner {
         if (m == null) return;
         saveQ(m, "What is method overloading?", new String[]{"Writing a method that takes too many parameters", "Defining multiple methods with the same name but different parameters", "Overriding a method from a parent class", "Calling a method multiple times"}, 1, "Overloading means same method name, different parameter lists (type or count).", "easy");
         saveQ(m, "What does `void` mean as a return type?", new String[]{"The method returns null", "The method returns no value", "The method is empty", "The method is private"}, 1, "void means the method performs work but does not return a value.", "easy");
-        saveQ(m, "What is method chaining?", new String[]{"Calling methods in a specific order", "Calling a method on the result of another method, on one line", "Defining methods that call each other", "Using multiple threads to run methods"}, 1, "Method chaining chains method calls: object.method1().method2() — each dot calls a method on the returned object.", "medium");
+        saveQ(m, "What is method chaining?", new String[]{"Calling methods in a specific order", "Calling a method on the result of another method, on one line", "Defining methods that call each other", "Using multiple threads to run methods"}, 1, "Method chaining chains method calls: object.method1().method2() â€” each dot calls a method on the returned object.", "medium");
         saveQ(m, "When a method's `return` statement executes, what happens?", new String[]{"The method continues to the next line", "The method exits immediately with the returned value", "Java saves the return value and continues", "The program restarts"}, 1, "return exits the method immediately and sends the value back to the caller.", "easy");
         saveQ(m, "What distinguishes a parameter from an argument?", new String[]{"They are the same thing", "Parameter = the variable in the method definition; Argument = the value passed when calling", "Argument = the variable in the definition; Parameter = the value passed", "Parameters are for static methods only"}, 1, "Parameters are defined in the method signature; arguments are the actual values passed when calling.", "medium");
     }
@@ -118,7 +116,7 @@ public class DataInitializer implements CommandLineRunner {
         CourseModule m = mod("control-flow");
         if (m == null) return;
         saveQ(m, "What is the correct way to compare two Strings in Java?", new String[]{"str1 == str2", "str1.equals(str2)", "str1 = str2", "compare(str1, str2)"}, 1, "Use .equals() to compare string content. == checks if they're the same object in memory.", "easy");
-        saveQ(m, "What does `&&` mean in Java?", new String[]{"OR — at least one condition must be true", "AND — both conditions must be true", "NOT — inverts a boolean", "XOR — only one must be true"}, 1, "&& is the logical AND operator: condition1 && condition2 is true only if both are true.", "easy");
+        saveQ(m, "What does `&&` mean in Java?", new String[]{"OR â€” at least one condition must be true", "AND â€” both conditions must be true", "NOT â€” inverts a boolean", "XOR â€” only one must be true"}, 1, "&& is the logical AND operator: condition1 && condition2 is true only if both are true.", "easy");
         saveQ(m, "What does `i++` do?", new String[]{"Increments i by 1 after the current operation", "Increments i by 1 before the current operation", "Adds 1 to i permanently", "Creates a new variable"}, 0, "i++ is post-increment: it uses the current value, then adds 1.", "easy");
         saveQ(m, "What does the enhanced for-loop `for (String name : names)` do?", new String[]{"Loops with an index counter", "Iterates over each element in the names collection", "Creates a new String for each name", "Only works with arrays"}, 1, "The for-each loop iterates over every element in a collection without needing an index.", "easy");
         saveQ(m, "What happens when you throw an exception?", new String[]{"The program continues to the next line", "The method stops and the exception travels up the call stack", "The program prints a warning but continues", "Java logs it internally"}, 1, "Throwing an exception exits the method immediately. The exception propagates up until something catches it.", "medium");
@@ -129,19 +127,19 @@ public class DataInitializer implements CommandLineRunner {
         CourseModule m = mod("interfaces-and-inheritance");
         if (m == null) return;
         saveQ(m, "Which keyword is used by a class to inherit from another class?", new String[]{"implements", "extends", "inherits", "super"}, 1, "extends is used for class-to-class inheritance. implements is for class-to-interface.", "easy");
-        saveQ(m, "An interface defines:", new String[]{"Complete implementations of every method", "Only method signatures (a contract)", "Private helper methods", "Concrete field values"}, 1, "An interface defines method signatures without bodies — a contract for implementing classes.", "easy");
+        saveQ(m, "An interface defines:", new String[]{"Complete implementations of every method", "Only method signatures (a contract)", "Private helper methods", "Concrete field values"}, 1, "An interface defines method signatures without bodies â€” a contract for implementing classes.", "easy");
         saveQ(m, "Can a class extend multiple classes?", new String[]{"Yes, using commas", "No, Java single-inheritance only", "Yes, using the extends keyword multiple times", "Only if they're interfaces"}, 1, "Java does not allow multiple class inheritance. A class can only extend one parent class.", "medium");
-        saveQ(m, "What does `@Override` do?", new String[]{"It's a comment for documentation", "It tells Java 'I am intentionally replacing a parent method' — Java gives a compile error if misspelled", "It forces the method to run faster", "It marks the method as the final version"}, 1, "Override is an annotation that confirms you're overriding a parent method. Java will error if the method doesn't actually override anything.", "easy");
+        saveQ(m, "What does `@Override` do?", new String[]{"It's a comment for documentation", "It tells Java 'I am intentionally replacing a parent method' â€” Java gives a compile error if misspelled", "It forces the method to run faster", "It marks the method as the final version"}, 1, "Override is an annotation that confirms you're overriding a parent method. Java will error if the method doesn't actually override anything.", "easy");
         saveQ(m, "What is the difference between an abstract class and an interface?", new String[]{"There is no difference", "Abstract classes can have implemented methods; interfaces traditionally only had signatures", "Interfaces can have fields; abstract classes cannot", "Abstract classes are faster"}, 1, "Abstract classes can have both implemented and abstract methods. Interfaces define a contract. (Java 8+ interfaces can have default methods.)", "medium");
     }
 
     private void seedModule6Questions() {
         CourseModule m = mod("generics");
         if (m == null) return;
-        saveQ(m, "What problem do generics solve?", new String[]{"Memory management", "Type safety — catch type mismatches at compile time", "Code indentation", "Database connectivity"}, 1, "Generics let you catch type mismatches at compile time instead of runtime ClassCastException.", "easy");
+        saveQ(m, "What problem do generics solve?", new String[]{"Memory management", "Type safety â€” catch type mismatches at compile time", "Code indentation", "Database connectivity"}, 1, "Generics let you catch type mismatches at compile time instead of runtime ClassCastException.", "easy");
         saveQ(m, "What does `List<Student>` mean?", new String[]{"A list that can hold any type of object", "A list that can only hold Student objects", "A list of Student objects and their subclasses", "A list that holds Student strings"}, 1, "List<Student> is a list that can only contain Student objects. Java checks this at compile time.", "easy");
-        saveQ(m, "What does the diamond operator `<>` do?", new String[]{"Creates a diamond-shaped data structure", "Lets Java infer the type from the left side — saves repeating it", "Marks generic methods", "Creates a new type parameter"}, 1, "The diamond <> lets the compiler infer the type from the variable declaration: List<Student> list = new ArrayList<>();", "easy");
-        saveQ(m, "In `JpaRepository<Student, Long>`, what do the two type parameters mean?", new String[]{"The entity type and its primary key type", "The table name and column count", "The package and class name", "The query type and return type"}, 0, "JpaRepository<EntityType, IdType> — Student is the entity, Long is the type of its @Id field.", "medium");
+        saveQ(m, "What does the diamond operator `<>` do?", new String[]{"Creates a diamond-shaped data structure", "Lets Java infer the type from the left side â€” saves repeating it", "Marks generic methods", "Creates a new type parameter"}, 1, "The diamond <> lets the compiler infer the type from the variable declaration: List<Student> list = new ArrayList<>();", "easy");
+        saveQ(m, "In `JpaRepository<Student, Long>`, what do the two type parameters mean?", new String[]{"The entity type and its primary key type", "The table name and column count", "The package and class name", "The query type and return type"}, 0, "JpaRepository<EntityType, IdType> â€” Student is the entity, Long is the type of its @Id field.", "medium");
         saveQ(m, "What does `Optional<Student>` help prevent?", new String[]{"Slow database queries", "NullPointerException by forcing you to handle the 'no value' case", "Memory leaks", "SQL injection"}, 1, "Optional forces you to handle both cases: when a value is present and when it's absent.", "medium");
     }
 
@@ -152,7 +150,7 @@ public class DataInitializer implements CommandLineRunner {
         saveQ(m, "What does `@Entity` do?", new String[]{"Makes a class a REST controller", "Marks a class as a database table", "Creates a new instance of the class", "Enables debugging"}, 1, "@Entity marks a class as a JPA entity that maps to a database table.", "easy");
         saveQ(m, "What does `@GetMapping` mean?", new String[]{"Handles HTTP PUT requests", "Handles HTTP GET requests", "Maps a Java object to JSON", "Gets a database connection"}, 1, "@GetMapping maps a controller method to HTTP GET requests.", "easy");
         saveQ(m, "Where would you place `@Id`?", new String[]{"On the class declaration", "On the field that is the primary key", "On the constructor", "On the repository interface"}, 1, "@Id marks a field as the database primary key, typically on a Long field.", "easy");
-        saveQ(m, "What error do you get if you forget `@Service` on a service class?", new String[]{"NoSuchBeanDefinitionException — Spring can't find the bean", "ClassNotFoundException", "Compile error", "NullPointerException"}, 0, "If you forget a stereotype annotation (@Service, @Repository, etc.), Spring can't create the bean and throws NoSuchBeanDefinitionException on startup.", "medium");
+        saveQ(m, "What error do you get if you forget `@Service` on a service class?", new String[]{"NoSuchBeanDefinitionException â€” Spring can't find the bean", "ClassNotFoundException", "Compile error", "NullPointerException"}, 0, "If you forget a stereotype annotation (@Service, @Repository, etc.), Spring can't create the bean and throws NoSuchBeanDefinitionException on startup.", "medium");
     }
 
     private void seedModule8Questions() {

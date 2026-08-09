@@ -8,7 +8,6 @@ import com.gamifiedjava.repository.LessonStepRepository;
 import com.gamifiedjava.repository.ModuleRepository;
 import com.gamifiedjava.repository.StepProgressRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ public class LessonStepService {
                 .collect(Collectors.toSet());
     }
 
-    /** Mastery = completed steps / total steps, 0–100. */
+    /** Mastery = completed steps / total steps, 0â€“100. */
     public int masteryPercent(Integer moduleId) {
         long total = stepRepository.countByModuleId(moduleId);
         if (total == 0) return 0;
@@ -61,7 +60,7 @@ public class LessonStepService {
         return (int) Math.round(done * 100.0 / total);
     }
 
-    /** Client-facing view of a step — deliberately omits answers (correctIndex, expectedOutput, solution). */
+    /** Client-facing view of a step â€” deliberately omits answers (correctIndex, expectedOutput, solution). */
     public List<Map<String, Object>> toClientSteps(List<LessonStep> steps, Set<Integer> done) {
         List<Map<String, Object>> out = new ArrayList<>();
         for (LessonStep s : steps) {
@@ -81,8 +80,6 @@ public class LessonStepService {
     }
 
     // ---------------------------------------------------------------- check
-
-    @Transactional
     public StepResult check(Integer stepId, Integer selectedIndex, String answer, String code) {
         LessonStep step = stepRepository.findById(stepId).orElse(null);
         if (step == null) return new StepResult(false, 0, "Step not found.", null, null);
@@ -120,27 +117,27 @@ public class LessonStepService {
         switch (type) {
             case CONCEPT, CODE_DEMO -> {
                 correct = true;
-                feedback = "Nice — on to the next.";
+                feedback = "Nice â€” on to the next.";
             }
             case MCQ -> {
                 correct = selectedIndex != null && selectedIndex.equals(step.getCorrectIndex());
-                feedback = correct ? "Correct!" : "Not quite — give it another look.";
+                feedback = correct ? "Correct!" : "Not quite â€” give it another look.";
             }
             case FILL_BLANK -> {
                 correct = normalize(answer).equals(normalize(step.getSolution()));
-                feedback = correct ? "Exactly right." : "Close — check the token you filled in.";
+                feedback = correct ? "Exactly right." : "Close â€” check the token you filled in.";
                 if (!correct) expected = null; // don't leak on first misses
             }
             case PREDICT_OUTPUT -> {
                 correct = looseMatch(answer, step.getExpectedOutput());
                 expected = step.getExpectedOutput();
-                feedback = correct ? "Spot on — that's the output." : "Not quite. The actual output is shown below — trace through the code and see why.";
+                feedback = correct ? "Spot on â€” that's the output." : "Not quite. The actual output is shown below â€” trace through the code and see why.";
             }
             case LIVE_CODE, FIX_THE_BUG, CHECKPOINT -> {
                 run = codeRunner.run(code);
                 if (!run.compileSuccess()) {
                     correct = false;
-                    feedback = run.timedOut() ? "Timed out — check for an infinite loop."
+                    feedback = run.timedOut() ? "Timed out â€” check for an infinite loop."
                             : "It doesn't compile yet. Read the console below.";
                 } else if (step.getExpectedOutput() != null && !step.getExpectedOutput().isBlank()) {
                     correct = looseMatch(run.stdout(), step.getExpectedOutput());
@@ -198,8 +195,6 @@ public class LessonStepService {
                              String expected, CodeRunnerService.RunResult run) {}
 
     // ---------------------------------------------------------------- seeding
-
-    @Transactional
     public void seedSteps() {
         // Remove StepProgress records whose step no longer exists (orphans from old seeds).
         Set<Integer> liveStepIds = stepRepository.findAll().stream()
@@ -239,34 +234,34 @@ public class LessonStepService {
                 .anyMatch(s -> "CONCEPT".equals(s.getType()));
     }
 
-    /** Module 1: Variables and Types — full teaching sequence. */
+    /** Module 1: Variables and Types â€” full teaching sequence. */
     private void seedModuleOne(CourseModule m) {
         int i = 0;
 
-        // ── CONCEPT 1: The type system ──────────────────────────────────────
-        step(m, i++, Type.CONCEPT, "Every variable has a type — and Java enforces it at compile time", XP_SMALL,
+        // â”€â”€ CONCEPT 1: The type system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        step(m, i++, Type.CONCEPT, "Every variable has a type â€” and Java enforces it at compile time", XP_SMALL,
                 "Java is **statically typed**: you declare the type of every variable upfront, and the "
                 + "compiler rejects any mismatch before your code ever runs.\n\n"
                 + "**The 8 primitive types** (lowercase, built-in):\n\n"
                 + "| Type | What it stores | Example |\n"
                 + "|------|---------------|---------|\n"
-                + "| `int` | whole number (−2 billion → +2 billion) | `int age = 25;` |\n"
+                + "| `int` | whole number (âˆ’2 billion â†’ +2 billion) | `int age = 25;` |\n"
                 + "| `long` | bigger whole number | `long pop = 8_000_000_000L;` |\n"
                 + "| `double` | decimal number (64-bit) | `double pi = 3.14;` |\n"
                 + "| `float` | decimal number (32-bit, less precise) | `float temp = 98.6f;` |\n"
                 + "| `boolean` | true or false | `boolean active = true;` |\n"
                 + "| `char` | single character | `char grade = 'A';` |\n"
-                + "| `byte` | tiny integer (−128 → 127) | `byte flag = 1;` |\n"
+                + "| `byte` | tiny integer (âˆ’128 â†’ 127) | `byte flag = 1;` |\n"
                 + "| `short` | small integer | `short year = 2026;` |\n\n"
-                + "**`String`** is *not* a primitive — it's a class (capital S) that holds a sequence of characters:\n\n"
+                + "**`String`** is *not* a primitive â€” it's a class (capital S) that holds a sequence of characters:\n\n"
                 + "```java\n"
                 + "String name = \"Alice\";  // double quotes, capital S\n"
                 + "char initial = 'A';     // char uses single quotes\n"
                 + "```\n\n"
-                + "The type is fixed when you declare the variable — you can't later assign a `boolean` into an `int`.").save();
+                + "The type is fixed when you declare the variable â€” you can't later assign a `boolean` into an `int`.").save();
 
         step(m, i++, Type.CODE_DEMO, "See types in action", XP_SMALL,
-                "Press **Run** and watch each type print. Notice `int` division truncates — `7 / 2` gives `3`, not `3.5`.")
+                "Press **Run** and watch each type print. Notice `int` division truncates â€” `7 / 2` gives `3`, not `3.5`.")
                 .code("public class Types {\n"
                     + "    public static void main(String[] args) {\n"
                     + "        int year   = 2026;\n"
@@ -294,30 +289,30 @@ public class LessonStepService {
                 .expected("3").save();
 
         step(m, i++, Type.MCQ, "Which of these is NOT a primitive type?", XP_SMALL,
-                "Four options below — three are primitives, one is a class. Which is the class?")
+                "Four options below â€” three are primitives, one is a class. Which is the class?")
                 .options("[\"boolean\",\"String\",\"char\",\"double\"]").correct(1).save();
 
-        // ── CONCEPT 2: final and var ────────────────────────────────────────
+        // â”€â”€ CONCEPT 2: final and var â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         step(m, i++, Type.CONCEPT, "Two special keywords: final and var", XP_SMALL,
-                "**`final`** — makes a variable a constant. The compiler refuses any later reassignment:\n\n"
+                "**`final`** â€” makes a variable a constant. The compiler refuses any later reassignment:\n\n"
                 + "```java\n"
                 + "final double PI = 3.14159;\n"
-                + "PI = 3;  // ✗ compile error: cannot assign a value to final variable\n"
+                + "PI = 3;  // âœ— compile error: cannot assign a value to final variable\n"
                 + "```\n\n"
                 + "Use `final` for values that should never change (math constants, config, lookup tables).\n\n"
                 + "---\n\n"
-                + "**`var`** (Java 10+) — *local variable type inference*. You skip writing the type and let "
+                + "**`var`** (Java 10+) â€” *local variable type inference*. You skip writing the type and let "
                 + "the compiler infer it from the right-hand side:\n\n"
                 + "```java\n"
                 + "var name    = \"Alice\";   // inferred: String\n"
                 + "var count   = 42;        // inferred: int\n"
                 + "var ratio   = 3.14;      // inferred: double\n"
                 + "```\n\n"
-                + "`var` is **still statically typed** — the type is locked at compile time, just not written out. "
+                + "`var` is **still statically typed** â€” the type is locked at compile time, just not written out. "
                 + "It only works for local variables (inside methods), never for fields or parameters.").save();
 
         step(m, i++, Type.CODE_DEMO, "final and var in action", XP_SMALL,
-                "Press **Run**. Notice `var` infers the type — it is NOT dynamic like JavaScript. "
+                "Press **Run**. Notice `var` infers the type â€” it is NOT dynamic like JavaScript. "
                 + "The `final` line is commented out to allow the demo to compile.")
                 .code("public class FinalVar {\n"
                     + "    public static void main(String[] args) {\n"
@@ -371,7 +366,7 @@ public class LessonStepService {
                 "Which statement about `var` is true?")
                 .options("["
                     + "\"It makes the variable dynamically typed like JavaScript\","
-                    + "\"It lets the compiler infer the type — the variable is still statically typed\","
+                    + "\"It lets the compiler infer the type â€” the variable is still statically typed\","
                     + "\"It works on fields and method parameters\","
                     + "\"It was introduced in Java 8\""
                     + "]").correct(1).save();
@@ -394,7 +389,7 @@ public class LessonStepService {
     private void seedModuleTwo(CourseModule m) {
         int i = 0;
         step(m, i++, Type.CONCEPT, "Classes are blueprints, objects are instances", XP_SMALL,
-                "A **class** defines the shape — what data and behaviour objects have.\n"
+                "A **class** defines the shape â€” what data and behaviour objects have.\n"
                 + "An **object** is a live instance built from that blueprint with `new`.\n\n"
                 + "```java\n"
                 + "Student alice = new Student();  // creates a new object\n"
@@ -405,7 +400,7 @@ public class LessonStepService {
 
         step(m, i++, Type.CODE_DEMO, "Your first class", XP_SMALL,
                 "A class defines the shape; `new` builds an object from it. "
-                + "Two separate objects — two separate copies of the fields. Press Run.")
+                + "Two separate objects â€” two separate copies of the fields. Press Run.")
                 .code("class Student {\n    String name;\n    int age;\n}\n\npublic class Demo {\n    public static void main(String[] args) {\n        Student alice = new Student();\n        alice.name = \"Alice\";\n        alice.age = 22;\n        Student bob = new Student();\n        bob.name = \"Bob\";\n        bob.age = 20;\n        System.out.println(alice.name + \" \" + alice.age);\n        System.out.println(bob.name + \" \" + bob.age);\n    }\n}")
                 .expected("Alice 22\nBob 20").save();
 
@@ -433,7 +428,7 @@ public class LessonStepService {
 
         step(m, i++, Type.CODE_DEMO, "Constructor: set up at creation time", XP_SMALL,
                 "A constructor runs the moment you call `new`. Inside it, `this.name` means "
-                + "'the field on this object' — it distinguishes the field from the same-named parameter. Press Run.")
+                + "'the field on this object' â€” it distinguishes the field from the same-named parameter. Press Run.")
                 .code("class Student {\n    String name;\n    int age;\n    Student(String name, int age) {\n        this.name = name;   // field = parameter\n        this.age  = age;\n    }\n}\npublic class Demo {\n    public static void main(String[] args) {\n        Student s = new Student(\"Alice\", 22);\n        System.out.println(s.name + \" \" + s.age);\n    }\n}")
                 .expected("Alice 22").save();
 
@@ -444,12 +439,12 @@ public class LessonStepService {
 
         step(m, i++, Type.FILL_BLANK, "this inside the constructor", XP_MEDIUM,
                 "The field and the parameter share the name `name`. "
-                + "Use `____.name` to refer to the field — not the parameter.")
+                + "Use `____.name` to refer to the field â€” not the parameter.")
                 .code("Student(String name) { ____.name = name; }")
                 .solution("this").save();
 
         step(m, i++, Type.FIX_THE_BUG, "Missing this.", XP_MEDIUM,
-                "`name = name` assigns the parameter to itself — the field stays null. "
+                "`name = name` assigns the parameter to itself â€” the field stays null. "
                 + "Add `this.` so the constructor stores the value. Output: Alice")
                 .code("public class Student {\n    private String name;\n    public Student(String name) {\n        name = name;  // bug\n    }\n    public String getName() { return name; }\n    public static void main(String[] args) {\n        System.out.println(new Student(\"Alice\").getName());\n    }\n}")
                 .expected("Alice").save();
@@ -515,28 +510,28 @@ public class LessonStepService {
 
         step(m, i++, Type.CONCEPT, "void and return", XP_SMALL,
                 "- If a method gives something back, declare its **return type** and use `return` to send the value.\n"
-                + "- `return` exits the method **immediately** — any code after it on that path is unreachable.\n"
-                + "- `void` means the method returns **nothing** — no return statement is required.\n\n"
+                + "- `return` exits the method **immediately** â€” any code after it on that path is unreachable.\n"
+                + "- `void` means the method returns **nothing** â€” no return statement is required.\n\n"
                 + "Every non-`void` method **must** have a `return` on every possible execution path "
                 + "or the compiler rejects it.").save();
 
         step(m, i++, Type.PREDICT_OUTPUT, "Early return in a chain", XP_MEDIUM,
-                "Java hits the first matching `return` and stops — the rest are skipped. "
+                "Java hits the first matching `return` and stops â€” the rest are skipped. "
                 + "What does getGrade(85) print?")
                 .code("public class Demo {\n    static String getGrade(int score) {\n        if (score >= 90) return \"A\";\n        if (score >= 80) return \"B\";\n        if (score >= 70) return \"C\";\n        return \"F\";\n    }\n    public static void main(String[] args) {\n        System.out.println(getGrade(85));\n    }\n}")
                 .expected("B").save();
 
         step(m, i++, Type.MCQ, "What does void mean?", XP_SMALL,
                 "A method declared with `void` as its return type does what?")
-                .options("[\"Returns the integer 0\",\"Returns nothing — the caller gets no value back\",\"Must have an explicit return statement\",\"Cannot take parameters\"]").correct(1).save();
+                .options("[\"Returns the integer 0\",\"Returns nothing â€” the caller gets no value back\",\"Must have an explicit return statement\",\"Cannot take parameters\"]").correct(1).save();
 
         step(m, i++, Type.FILL_BLANK, "void return type", XP_MEDIUM,
-                "A method that just prints its argument and returns nothing — what return type goes in the blank?")
+                "A method that just prints its argument and returns nothing â€” what return type goes in the blank?")
                 .code("public ____ printName(String name) { System.out.println(name); }")
                 .solution("void").save();
 
         step(m, i++, Type.FIX_THE_BUG, "Missing return on one branch", XP_MEDIUM,
-                "max() returns `a` when a > b but falls off the end when b >= a — compile error. "
+                "max() returns `a` when a > b but falls off the end when b >= a â€” compile error. "
                 + "Add the missing return. Output: 7")
                 .code("public class Demo {\n    static int max(int a, int b) {\n        if (a > b) {\n            return a;\n        }\n        // missing return b;\n    }\n    public static void main(String[] args) {\n        System.out.println(max(3, 7));\n    }\n}")
                 .expected("7").save();
@@ -544,7 +539,7 @@ public class LessonStepService {
         step(m, i++, Type.MCQ, "Method overloading", XP_SMALL,
                 "Java has both `add(int a, int b)` and `add(double a, double b)`. "
                 + "The call `add(2.0, 3.0)` will invoke which one?")
-                .options("[\"The int version — Java always prefers int\",\"The double version — parameter types match\",\"Compile error — two methods cannot share a name\",\"Runtime error\"]").correct(1).save();
+                .options("[\"The int version â€” Java always prefers int\",\"The double version â€” parameter types match\",\"Compile error â€” two methods cannot share a name\",\"Runtime error\"]").correct(1).save();
 
         step(m, i++, Type.LIVE_CODE, "Write multiply()", XP_LARGE,
                 "Write a static method `multiply(int a, int b)` that returns a * b. "
@@ -562,7 +557,7 @@ public class LessonStepService {
     // ---- MODULE 4: Control Flow -----------------------------------------------
     private void seedModuleFour(CourseModule m) {
         int i = 0;
-        step(m, i++, Type.CONCEPT, "if / else — making decisions", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "if / else â€” making decisions", XP_SMALL,
                 "Java evaluates the condition in `( )` after `if`. If `true`, that block runs; "
                 + "otherwise the `else` block runs.\n\n"
                 + "```java\n"
@@ -570,10 +565,10 @@ public class LessonStepService {
                 + "else if (score >= 80) { /* B */ }\n"
                 + "else                  { /* F */ }\n"
                 + "```\n\n"
-                + "Java checks conditions **top-to-bottom** and runs the **first** matching block — "
+                + "Java checks conditions **top-to-bottom** and runs the **first** matching block â€” "
                 + "the rest are skipped.").save();
 
-        step(m, i++, Type.CODE_DEMO, "if/else chain — grade calculator", XP_SMALL,
+        step(m, i++, Type.CODE_DEMO, "if/else chain â€” grade calculator", XP_SMALL,
                 "Java evaluates each condition top-to-bottom and runs the first matching block. "
                 + "score = 75 falls into the `>= 70` branch. Press Run to confirm.")
                 .code("public class Demo {\n    public static void main(String[] args) {\n        int score = 75;\n        if (score >= 90) {\n            System.out.println(\"A\");\n        } else if (score >= 80) {\n            System.out.println(\"B\");\n        } else if (score >= 70) {\n            System.out.println(\"C\");\n        } else {\n            System.out.println(\"F\");\n        }\n    }\n}")
@@ -597,16 +592,16 @@ public class LessonStepService {
 
         step(m, i++, Type.CONCEPT, "String comparison and logical AND", XP_SMALL,
                 "**Never use `==` to compare Strings.** `==` checks if two references point to the "
-                + "*same object in memory* — not the same characters. Always use `.equals()`:\n\n"
+                + "*same object in memory* â€” not the same characters. Always use `.equals()`:\n\n"
                 + "```java\n"
                 + "if (name.equals(\"Alice\")) { ... }   // correct\n"
-                + "if (name == \"Alice\")      { ... }   // WRONG — may fail at runtime\n"
+                + "if (name == \"Alice\")      { ... }   // WRONG â€” may fail at runtime\n"
                 + "```\n\n"
                 + "The **`&&` operator** (logical AND) requires **both** conditions to be true: "
                 + "`age >= 18 && hasTicket` is only `true` when the customer is both old enough **and** has a ticket.").save();
 
         step(m, i++, Type.MCQ, ".equals() vs ==", XP_SMALL,
-                "`==` checks if two references point to the same object in memory — NOT the same characters. "
+                "`==` checks if two references point to the same object in memory â€” NOT the same characters. "
                 + "Which must you use to compare String content?")
                 .options("[\"==\",\".equals()\",\"Both work identically for Strings\",\".compareTo()\"]").correct(1).save();
 
@@ -641,7 +636,7 @@ public class LessonStepService {
     // ---- MODULE 5: Interfaces and Inheritance ---------------------------------
     private void seedModuleFive(CourseModule m) {
         int i = 0;
-        step(m, i++, Type.CONCEPT, "extends — inheriting behaviour", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "extends â€” inheriting behaviour", XP_SMALL,
                 "A child class `extends` a parent and automatically inherits all its fields and methods. "
                 + "Java allows extending only **one** class at a time.\n\n"
                 + "```java\n"
@@ -651,7 +646,7 @@ public class LessonStepService {
                 + "}\n"
                 + "```\n\n"
                 + "Spring Boot uses this everywhere: `StudentRepository extends JpaRepository` gives you "
-                + "`save()`, `findById()`, `findAll()` and 15+ more database methods — **for free**.").save();
+                + "`save()`, `findById()`, `findAll()` and 15+ more database methods â€” **for free**.").save();
 
         step(m, i++, Type.CODE_DEMO, "extends: inherit methods for free", XP_SMALL,
                 "Dog extends Animal, so it automatically inherits breathe(). An empty Dog class gets a "
@@ -668,32 +663,32 @@ public class LessonStepService {
         step(m, i++, Type.MCQ, "Why add @Override?", XP_SMALL,
                 "You write `void speel()` thinking you are overriding `void speak()` from the parent. "
                 + "With @Override present, what happens at compile time?")
-                .options("[\"Java silently creates a brand-new method named speel()\",\"Compile error — no method speel() in the parent to override\",\"Java renames speel() to speak() automatically\",\"The parent's speak() is deleted\"]").correct(1).save();
+                .options("[\"Java silently creates a brand-new method named speel()\",\"Compile error â€” no method speel() in the parent to override\",\"Java renames speel() to speak() automatically\",\"The parent's speak() is deleted\"]").correct(1).save();
 
         step(m, i++, Type.PREDICT_OUTPUT, "Overridden method wins", XP_MEDIUM,
                 "Cat overrides speak(). The object is a Cat. Which speak() runs?")
                 .code("class Animal {\n    void speak() { System.out.println(\"...\"); }\n}\nclass Cat extends Animal {\n    @Override\n    void speak() { System.out.println(\"Meow!\"); }\n}\npublic class Demo {\n    public static void main(String[] args) {\n        Cat c = new Cat();\n        c.speak();\n    }\n}")
                 .expected("Meow!").save();
 
-        step(m, i++, Type.CONCEPT, "interface — a contract", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "interface â€” a contract", XP_SMALL,
                 "An **interface** declares *what* a class must do, not *how*. "
                 + "It lists method signatures with no bodies. Any class that `implements` it must provide the bodies.\n\n"
                 + "```java\n"
                 + "interface Shape {\n"
-                + "    int area();   // no body — just the contract\n"
+                + "    int area();   // no body â€” just the contract\n"
                 + "}\n"
                 + "class Square implements Shape {\n"
                 + "    public int area() { return side * side; }  // must implement\n"
                 + "}\n"
                 + "```\n\n"
                 + "Key differences:\n"
-                + "- `extends` → inherits concrete code from **one** parent class\n"
-                + "- `implements` → fulfils a contract from **one or more** interfaces\n\n"
-                + "`@Override` confirms you are replacing a parent's method — a typo becomes a **compile error** instead of a silent new method.").save();
+                + "- `extends` â†’ inherits concrete code from **one** parent class\n"
+                + "- `implements` â†’ fulfils a contract from **one or more** interfaces\n\n"
+                + "`@Override` confirms you are replacing a parent's method â€” a typo becomes a **compile error** instead of a silent new method.").save();
 
         step(m, i++, Type.CODE_DEMO, "interface: a contract every implementer must honour", XP_SMALL,
                 "Shape declares area() with no body. Square and Rectangle each provide the body. "
-                + "printArea() accepts ANY Shape — it works with both implementations. Press Run.")
+                + "printArea() accepts ANY Shape â€” it works with both implementations. Press Run.")
                 .code("interface Shape {\n    int area();\n}\nclass Square implements Shape {\n    int side;\n    Square(int s) { this.side = s; }\n    public int area() { return side * side; }\n}\nclass Rectangle implements Shape {\n    int w, h;\n    Rectangle(int w, int h) { this.w = w; this.h = h; }\n    public int area() { return w * h; }\n}\npublic class Demo {\n    static void printArea(Shape s) { System.out.println(s.area()); }\n    public static void main(String[] args) {\n        printArea(new Square(4));\n        printArea(new Rectangle(3, 5));\n    }\n}")
                 .expected("16\n15").save();
 
@@ -708,7 +703,7 @@ public class LessonStepService {
                 .solution("implements").save();
 
         step(m, i++, Type.FIX_THE_BUG, "Missing interface method", XP_MEDIUM,
-                "Triangle says it implements Shape but has no area() method — compile error. "
+                "Triangle says it implements Shape but has no area() method â€” compile error. "
                 + "Add `public int area() { return base * height / 2; }`. Output: 6")
                 .code("interface Shape {\n    int area();\n}\npublic class Triangle implements Shape {\n    int base, height;\n    Triangle(int base, int height) {\n        this.base = base;\n        this.height = height;\n    }\n    // TODO: public int area() { return base * height / 2; }\n    public static void main(String[] args) {\n        Triangle t = new Triangle(4, 3);\n        System.out.println(t.area());\n    }\n}")
                 .expected("6").save();
@@ -731,29 +726,29 @@ public class LessonStepService {
     // ---- MODULE 6: Generics and Optional --------------------------------------
     private void seedModuleSix(CourseModule m) {
         int i = 0;
-        step(m, i++, Type.CONCEPT, "Generics — type-safe collections", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "Generics â€” type-safe collections", XP_SMALL,
                 "Without generics, a `List` accepts *anything* and crashes at runtime with `ClassCastException`. "
                 + "**Generics constrain the type at compile time:**\n\n"
                 + "```java\n"
                 + "List<Student> roster = new ArrayList<>();\n"
                 + "roster.add(new Student());   // OK\n"
-                + "roster.add(\"oops\");          // compile error — caught before you run\n"
+                + "roster.add(\"oops\");          // compile error â€” caught before you run\n"
                 + "```\n\n"
                 + "The `<T>` in `List<T>`, `Optional<T>`, and `JpaRepository<T, ID>` is a **type parameter** "
                 + "you fill in with a concrete class.").save();
 
         step(m, i++, Type.CODE_DEMO, "List<String>: type enforced at compile time", XP_SMALL,
                 "Without generics a List accepts anything and crashes at runtime with ClassCastException. "
-                + "`List<String>` tells the compiler 'only Strings here' — wrong types are rejected at compile time "
+                + "`List<String>` tells the compiler 'only Strings here' â€” wrong types are rejected at compile time "
                 + "and no manual cast is needed when reading items back. Press Run.")
                 .code("import java.util.*;\npublic class Demo {\n    public static void main(String[] args) {\n        List<String> names = new ArrayList<>();\n        names.add(\"Alice\");\n        names.add(\"Bob\");\n        for (String s : names) {\n            System.out.println(s.toUpperCase());\n        }\n    }\n}")
                 .expected("ALICE\nBOB").save();
 
         step(m, i++, Type.MCQ, "What does List<Student> guarantee?", XP_SMALL,
                 "You declare `List<Student> roster`. What does the compiler enforce?")
-                .options("[\"The list sorts itself automatically\",\"Only Student objects can be added — wrong types are a compile error\",\"The list never throws exceptions\",\"Students are stored more efficiently in memory\"]").correct(1).save();
+                .options("[\"The list sorts itself automatically\",\"Only Student objects can be added â€” wrong types are a compile error\",\"The list never throws exceptions\",\"Students are stored more efficiently in memory\"]").correct(1).save();
 
-        step(m, i++, Type.CONCEPT, "Optional<T> — safe null handling", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "Optional<T> â€” safe null handling", XP_SMALL,
                 "`Optional<T>` is a container that either holds a value or holds nothing. "
                 + "Spring's `findById()` returns `Optional<Student>` because the student **might not exist**.\n\n"
                 + "Instead of returning `null` (and risking `NullPointerException` if the caller forgets to check):\n\n"
@@ -771,12 +766,12 @@ public class LessonStepService {
                 .code("import java.util.*;\npublic class Demo {\n    public static void main(String[] args) {\n        Optional<String> present = Optional.of(\"Alice\");\n        Optional<String> empty   = Optional.empty();\n        System.out.println(present.orElse(\"nobody\"));\n        System.out.println(empty.orElse(\"nobody\"));\n    }\n}")
                 .expected("Alice\nnobody").save();
 
-        step(m, i++, Type.PREDICT_OUTPUT, "Present Optional — what comes out?", XP_MEDIUM,
+        step(m, i++, Type.PREDICT_OUTPUT, "Present Optional â€” what comes out?", XP_MEDIUM,
                 "`Optional.of(42)` holds the value 42. `orElse(0)` only fires if empty. What prints?")
                 .code("import java.util.*;\npublic class Demo {\n    public static void main(String[] args) {\n        Optional<Integer> val = Optional.of(42);\n        System.out.println(val.orElse(0));\n    }\n}")
                 .expected("42").save();
 
-        step(m, i++, Type.PREDICT_OUTPUT, "Empty Optional — fallback fires", XP_MEDIUM,
+        step(m, i++, Type.PREDICT_OUTPUT, "Empty Optional â€” fallback fires", XP_MEDIUM,
                 "`Optional.empty()` holds nothing. What does `orElse(\"nobody\")` return?")
                 .code("import java.util.*;\npublic class Demo {\n    public static void main(String[] args) {\n        Optional<String> empty = Optional.empty();\n        System.out.println(empty.orElse(\"nobody\"));\n    }\n}")
                 .expected("nobody").save();
@@ -791,7 +786,7 @@ public class LessonStepService {
                 .solution("Student").save();
 
         step(m, i++, Type.FIX_THE_BUG, "Add the type parameter", XP_MEDIUM,
-                "This raw List is unsafe — add `<String>` to both List and ArrayList to make it type-safe. Output: Alice")
+                "This raw List is unsafe â€” add `<String>` to both List and ArrayList to make it type-safe. Output: Alice")
                 .code("import java.util.*;\npublic class Demo {\n    public static void main(String[] args) {\n        List names = new ArrayList();\n        names.add(\"Alice\");\n        String first = (String) names.get(0);\n        System.out.println(first);\n    }\n}")
                 .expected("Alice").save();
 
@@ -813,13 +808,13 @@ public class LessonStepService {
     // ---- MODULE 7: Annotations ------------------------------------------------
     private void seedModuleSeven(CourseModule m) {
         int i = 0;
-        step(m, i++, Type.CONCEPT, "Annotations — metadata labels", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "Annotations â€” metadata labels", XP_SMALL,
                 "An annotation starts with `@` and attaches **instructions** to a class, method, or field. "
-                + "It doesn't change your logic — it adds metadata the **framework reads at startup**.\n\n"
+                + "It doesn't change your logic â€” it adds metadata the **framework reads at startup**.\n\n"
                 + "```java\n"
-                + "@Entity                     // → creates a DB table\n"
+                + "@Entity                     // â†’ creates a DB table\n"
                 + "public class Student {\n"
-                + "    @Id                     // → marks the primary key\n"
+                + "    @Id                     // â†’ marks the primary key\n"
                 + "    private Long id;\n"
                 + "}\n"
                 + "```\n\n"
@@ -827,7 +822,7 @@ public class LessonStepService {
 
         step(m, i++, Type.CODE_DEMO, "@Override: the annotation Java itself checks", XP_SMALL,
                 "Annotations start with `@` and attach instructions that frameworks read at startup. "
-                + "@Override is special — Java verifies the method actually exists in a parent. "
+                + "@Override is special â€” Java verifies the method actually exists in a parent. "
                 + "Misspell `speak()` as `speel()` with @Override and you get a compile error instead of a silent bug. Press Run.")
                 .code("class Animal {\n    void speak() { System.out.println(\"...\"); }\n}\nclass Dog extends Animal {\n    @Override\n    void speak() { System.out.println(\"Woof!\"); }\n}\npublic class Demo {\n    public static void main(String[] args) {\n        new Dog().speak();\n    }\n}")
                 .expected("Woof!").save();
@@ -846,16 +841,16 @@ public class LessonStepService {
                 "Annotations you will use every single day:\n\n"
                 + "| Annotation | Where | What it does |\n"
                 + "|-----------|-------|--------------|\n"
-                + "| `@Entity` | Class | Maps class → DB table |\n"
+                + "| `@Entity` | Class | Maps class â†’ DB table |\n"
                 + "| `@Id` | Field | Marks the primary key |\n"
                 + "| `@Service` | Class | Registers as a Spring bean |\n"
                 + "| `@RestController` | Class | Handles HTTP requests, returns JSON |\n"
                 + "| `@GetMapping(\"/path\")` | Method | Maps to HTTP GET |\n"
                 + "| `@PostMapping(\"/path\")` | Method | Maps to HTTP POST |\n"
                 + "| `@RequestBody` | Parameter | Reads JSON body into a Java object |\n\n"
-                + "Forget one and Spring gives a clear error at startup — usually `NoSuchBeanDefinitionException`.").save();
+                + "Forget one and Spring gives a clear error at startup â€” usually `NoSuchBeanDefinitionException`.").save();
 
-        step(m, i++, Type.MCQ, "@Entity — what it does", XP_SMALL,
+        step(m, i++, Type.MCQ, "@Entity â€” what it does", XP_SMALL,
                 "When Spring Boot starts and sees `@Entity` on a class, what does it do?")
                 .options("[\"Creates a Spring bean for the service layer\",\"Maps the class to a database table and manages its schema\",\"Makes the class handle HTTP requests\",\"Marks a field as the primary key\"]").correct(1).save();
 
@@ -875,7 +870,7 @@ public class LessonStepService {
         step(m, i++, Type.LIVE_CODE, "Override toString()", XP_LARGE,
                 "Write a class `Widget` with a private `String name` field and constructor. "
                 + "Add @Override and implement toString() to return the name. "
-                + "In main, create Widget(\"Gadget\") and print it — println calls toString() automatically. Output: Gadget")
+                + "In main, create Widget(\"Gadget\") and print it â€” println calls toString() automatically. Output: Gadget")
                 .code("public class Widget {\n    private String name;\n    public Widget(String name) { this.name = name; }\n\n    // TODO: @Override toString() to return name\n\n    public static void main(String[] args) {\n        System.out.println(new Widget(\"Gadget\"));\n    }\n}")
                 .expected("Gadget").save();
 
@@ -890,18 +885,18 @@ public class LessonStepService {
     // ---- MODULE 8: Packages and Imports ---------------------------------------
     private void seedModuleEight(CourseModule m) {
         int i = 0;
-        step(m, i++, Type.CONCEPT, "Packages — namespaced folders", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "Packages â€” namespaced folders", XP_SMALL,
                 "A **package** is a named namespace that maps directly to a folder on disk. "
                 + "It organises your classes and prevents naming conflicts between libraries.\n\n"
                 + "```java\n"
                 + "package com.example.studentapi;   // must be the FIRST line\n"
                 + "```\n\n"
-                + "Packages use **reversed domain notation** (`com.example`) to guarantee global uniqueness — "
+                + "Packages use **reversed domain notation** (`com.example`) to guarantee global uniqueness â€” "
                 + "two teams at different companies cannot accidentally share a package name.").save();
 
         step(m, i++, Type.CODE_DEMO, "Imports bring in classes from other packages", XP_SMALL,
                 "A package is a namespace that maps to a folder on disk. "
-                + "`import java.util.List;` tells Java where to find List — without it the compiler can't locate the class. "
+                + "`import java.util.List;` tells Java where to find List â€” without it the compiler can't locate the class. "
                 + "java.lang (String, System, Math) is auto-imported; everything else you must import explicitly. Press Run.")
                 .code("import java.util.List;\nimport java.util.ArrayList;\n\npublic class Demo {\n    public static void main(String[] args) {\n        List<String> names = new ArrayList<>();\n        names.add(\"Alice\");\n        names.add(\"Bob\");\n        System.out.println(names.size());\n    }\n}")
                 .expected("2").save();
@@ -914,20 +909,20 @@ public class LessonStepService {
         step(m, i++, Type.CONCEPT, "Import rules", XP_SMALL,
                 "**File structure in every Java file:**\n\n"
                 + "```\n"
-                + "1. package com.example.student;   ← must come first\n"
-                + "2. import java.util.List;         ← then all imports\n"
-                + "3. public class StudentService {  ← then the class\n"
+                + "1. package com.example.student;   â† must come first\n"
+                + "2. import java.util.List;         â† then all imports\n"
+                + "3. public class StudentService {  â† then the class\n"
                 + "```\n\n"
                 + "**Packages you will import most:**\n"
-                + "- `java.util.*` — `List`, `Map`, `ArrayList`, `Optional`\n"
-                + "- `org.springframework.*` — Spring annotations and types\n"
-                + "- `jakarta.persistence.*` — JPA/Hibernate\n\n"
-                + "`java.lang` (String, System, Math, Integer…) is **always imported automatically** — "
+                + "- `java.util.*` â€” `List`, `Map`, `ArrayList`, `Optional`\n"
+                + "- `org.springframework.*` â€” Spring annotations and types\n"
+                + "- `jakarta.persistence.*` â€” JPA/Hibernate\n\n"
+                + "`java.lang` (String, System, Math, Integerâ€¦) is **always imported automatically** â€” "
                 + "never write `import java.lang.String`.").save();
 
         step(m, i++, Type.MCQ, "Order in a Java file", XP_SMALL,
                 "What is the required order of package declaration, import statements, and class declaration?")
-                .options("[\"imports → package → class\",\"class → package → imports\",\"package → imports → class\",\"Order does not matter\"]").correct(2).save();
+                .options("[\"imports â†’ package â†’ class\",\"class â†’ package â†’ imports\",\"package â†’ imports â†’ class\",\"Order does not matter\"]").correct(2).save();
 
         step(m, i++, Type.MCQ, "Where does List live?", XP_SMALL,
                 "Which import brings in the standard Java List interface?")
@@ -940,7 +935,7 @@ public class LessonStepService {
 
         step(m, i++, Type.MCQ, "Why reverse domain notation?", XP_SMALL,
                 "Packages use reversed domain names (com.example.app) rather than plain names (app). Why?")
-                .options("[\"It makes code run faster\",\"It guarantees global uniqueness — two teams at different companies cannot accidentally share a package name\",\"Java compilers require lowercase names\",\"It is a Spring Boot convention only\"]").correct(1).save();
+                .options("[\"It makes code run faster\",\"It guarantees global uniqueness â€” two teams at different companies cannot accidentally share a package name\",\"Java compilers require lowercase names\",\"It is a Spring Boot convention only\"]").correct(1).save();
 
         step(m, i++, Type.LIVE_CODE, "Use List<Integer> with imports", XP_LARGE,
                 "Import java.util.List and java.util.ArrayList. "
@@ -952,18 +947,18 @@ public class LessonStepService {
                 "Import java.util.List and java.util.ArrayList. "
                 + "Create a List<String>, add \"Java\", \"Python\", \"Go\" in that order, "
                 + "then print the element at index 1. Output: Python")
-                .code("// TODO: imports\n\npublic class Main {\n    public static void main(String[] args) {\n        // List<String> with \"Java\", \"Python\", \"Go\" — print index 1\n    }\n}")
+                .code("// TODO: imports\n\npublic class Main {\n    public static void main(String[] args) {\n        // List<String> with \"Java\", \"Python\", \"Go\" â€” print index 1\n    }\n}")
                 .expected("Python").save();
     }
 
     // ---- MODULE 9: Lambdas ----------------------------------------------------
     private void seedModuleNine(CourseModule m) {
         int i = 0;
-        step(m, i++, Type.CONCEPT, "Lambdas — inline behaviour", XP_SMALL,
+        step(m, i++, Type.CONCEPT, "Lambdas â€” inline behaviour", XP_SMALL,
                 "Before Java 8, passing a small block of code required a full anonymous class. "
                 + "A **lambda** does the same thing on one line.\n\n"
                 + "```java\n"
-                + "// Old way — anonymous class\n"
+                + "// Old way â€” anonymous class\n"
                 + "Runnable r = new Runnable() {\n"
                 + "    public void run() { System.out.println(\"Hello!\"); }\n"
                 + "};\n\n"
@@ -976,7 +971,7 @@ public class LessonStepService {
         step(m, i++, Type.CODE_DEMO, "Anonymous class vs lambda", XP_SMALL,
                 "Before lambdas, passing a small block of behaviour required a whole anonymous class. "
                 + "A lambda writes the same thing on one line. `->` separates parameters (left) from the body (right). "
-                + "Both produce identical output — the lambda is just less noise. Press Run.")
+                + "Both produce identical output â€” the lambda is just less noise. Press Run.")
                 .code("interface Greeter {\n    void greet();\n}\npublic class Demo {\n    static void run(Greeter g) { g.greet(); }\n    public static void main(String[] args) {\n        // Old: anonymous class\n        run(new Greeter() {\n            public void greet() { System.out.println(\"Hello from anon!\"); }\n        });\n        // New: lambda\n        run(() -> System.out.println(\"Hello from lambda!\"));\n    }\n}")
                 .expected("Hello from anon!\nHello from lambda!").save();
 
@@ -990,13 +985,13 @@ public class LessonStepService {
                 .options("[\"() -> a + b\",\"a, b -> a + b\",\"(a, b) -> a + b\",\"a -> b -> a + b\"]").correct(2).save();
 
         step(m, i++, Type.CODE_DEMO, "orElseThrow with a lambda", XP_SMALL,
-                "`orElseThrow` takes a Supplier<Exception> — a zero-parameter lambda that produces an exception. "
+                "`orElseThrow` takes a Supplier<Exception> â€” a zero-parameter lambda that produces an exception. "
                 + "If the Optional is present the lambda never fires. If empty it runs and throws. Press Run.")
                 .code("import java.util.*;\npublic class Demo {\n    public static void main(String[] args) {\n        Optional<String> present = Optional.of(\"Bob\");\n        String name = present.orElseThrow(() -> new RuntimeException(\"Not found\"));\n        System.out.println(name);\n    }\n}")
                 .expected("Bob").save();
 
         step(m, i++, Type.CONCEPT, "Functional interfaces", XP_SMALL,
-                "A lambda can only be used where Java expects a **functional interface** — "
+                "A lambda can only be used where Java expects a **functional interface** â€” "
                 + "an interface with exactly **one** abstract method. The lambda becomes its implementation.\n\n"
                 + "Common built-in functional interfaces:\n\n"
                 + "| Interface | Signature | Use |\n"
@@ -1005,7 +1000,7 @@ public class LessonStepService {
                 + "| `Supplier<T>` | `T get()` | Produce a value |\n"
                 + "| `Consumer<T>` | `void accept(T t)` | Consume a value |\n"
                 + "| `Predicate<T>` | `boolean test(T t)` | Test a condition |\n"
-                + "| `Function<T,R>` | `R apply(T t)` | Transform T → R |\n\n"
+                + "| `Function<T,R>` | `R apply(T t)` | Transform T â†’ R |\n\n"
                 + "Lambda syntax rules:\n"
                 + "- No params: `() -> body`\n"
                 + "- One param: `name -> body` *(parens optional)*\n"

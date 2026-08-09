@@ -1,41 +1,27 @@
 package com.gamifiedjava.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "course_module")
 public class CourseModule {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, unique = true)
     private String slug;
 
-    @Column(length = 500)
     private String description;
 
-    @Column(name = "content_markdown", columnDefinition = "TEXT")
     private String contentMarkdown;
 
-    @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 
-    @Column(name = "xp_reward")
     private Integer xpReward = 100;
 
-    @Column(name = "challenge_instructions", columnDefinition = "TEXT")
     private String challengeInstructions;
 
-    @Column(name = "challenge_template_code", columnDefinition = "TEXT")
     private String challengeTemplateCode;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public CourseModule() {}

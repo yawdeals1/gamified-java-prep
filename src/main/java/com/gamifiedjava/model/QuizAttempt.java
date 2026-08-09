@@ -1,30 +1,19 @@
 package com.gamifiedjava.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "quiz_attempt")
 public class QuizAttempt {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "module_id")
     private CourseModule module;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id")
     private QuizQuestion question;
 
-    @Column(name = "selected_index")
     private Integer selectedIndex;
 
     private Boolean correct;
 
-    @Column(name = "attempted_at")
     private LocalDateTime attemptedAt = LocalDateTime.now();
 
     public QuizAttempt() {}

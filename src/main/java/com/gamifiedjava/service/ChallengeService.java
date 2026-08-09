@@ -7,7 +7,6 @@ import com.gamifiedjava.repository.ChallengeSubmissionRepository;
 import com.gamifiedjava.repository.ModuleProgressRepository;
 import com.gamifiedjava.repository.ModuleRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.nio.file.*;
@@ -38,8 +37,6 @@ public class ChallengeService {
         this.ollamaService = ollamaService;
         this.gamificationService = gamificationService;
     }
-
-    @Transactional
     public ChallengeResult submit(Integer moduleId, String sourceCode) {
         CourseModule mod = moduleRepository.findById(moduleId).orElse(null);
         if (mod == null) {

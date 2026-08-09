@@ -3,7 +3,6 @@ package com.gamifiedjava.service;
 import com.gamifiedjava.model.*;
 import com.gamifiedjava.repository.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,8 +32,6 @@ public class GamificationService {
             return appStateRepository.save(s);
         });
     }
-
-    @Transactional
     public AppState addXp(String action, int amount, String note) {
         AppState state = getState();
         state.setTotalXp(state.getTotalXp() + amount);
@@ -48,8 +45,6 @@ public class GamificationService {
         checkAchievements(state);
         return state;
     }
-
-    @Transactional
     public void checkStreak() {
         AppState state = getState();
         LocalDate today = LocalDate.now();
@@ -82,12 +77,10 @@ public class GamificationService {
     public List<Achievement> getAchievements() {
         return achievementRepository.findAllByOrderByUnlockedAtAsc();
     }
-
-    @Transactional
     public void seedAchievements() {
         if (achievementRepository.count() == 0) {
             achievementRepository.save(new Achievement("First Steps", "Complete your first module", "footprints"));
-            achievementRepository.save(new Achievement("Knowledge Seeker", "Pass all quizzes with ≥80%", "book"));
+            achievementRepository.save(new Achievement("Knowledge Seeker", "Pass all quizzes with â‰¥80%", "book"));
             achievementRepository.save(new Achievement("Code Warrior", "Pass all code challenges", "sword"));
             achievementRepository.save(new Achievement("Full Stack", "Complete all 9 modules", "trophy"));
             achievementRepository.save(new Achievement("Streak Master", "Maintain a 7-day streak", "fire"));
@@ -121,8 +114,6 @@ public class GamificationService {
         unlockIf("Streak Master", state.getStreakCount() >= 7);
         unlockIf("Early Adopter", completedModules >= 1);
     }
-
-    @Transactional
     protected void unlockIf(String name, boolean condition) {
         if (!condition) return;
         achievementRepository.findByName(name).ifPresent(a -> {

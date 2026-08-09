@@ -3,7 +3,6 @@ package com.gamifiedjava.service;
 import com.gamifiedjava.model.*;
 import com.gamifiedjava.repository.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -28,8 +27,6 @@ public class QuizService {
     public List<QuizQuestion> getQuestionsForModule(Integer moduleId) {
         return questionRepository.findByModuleId(moduleId);
     }
-
-    @Transactional
     public QuizResult submitAnswers(Integer moduleId, Map<Integer, Integer> answers) {
         List<QuizQuestion> questions = questionRepository.findByModuleId(moduleId);
         int correct = 0;

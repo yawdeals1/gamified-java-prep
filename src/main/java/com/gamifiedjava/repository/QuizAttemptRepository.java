@@ -1,14 +1,81 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.model.QuizAttempt;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.gamifiedjava.model.QuizQuestion;
+import com.gamifiedjava.studio.StudioClient;
+import com.gamifiedjava.studio.StudioRepository;
+import com.gamifiedjava.studio.Ts;
 import org.springframework.stereotype.Repository;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
-public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Integer> {
-    List<QuizAttempt> findByModuleIdOrderByAttemptedAtDesc(Integer moduleId);
-    long countByModuleIdAndCorrectTrue(Integer moduleId);
-    long countByModuleId(Integer moduleId);
+public class QuizAttemptRepository extends StudioRepository<QuizAttempt> {
+
+    private final ModuleRepository moduleRepository;
+    private final QuizQuestionRepository questionRepository;
+
+    public QuizAttemptRepository(StudioClient client,
+                                 ModuleRepository moduleRepository,
+                                 QuizQuestionRepository questionRepository) {
+        super(client, "quiz_attempt");
+        this.moduleRepository = moduleRepository;
+        this.questionRepository = questionRepository;
+    }
+
+    @Override
+    protected Map<String, Object> toRow(QuizAttempt a) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("module_id", a.getModule() != null ? a.getModule().getId() : null);
+        row.put("question_id", a.getQuestion() != null ? a.getQuestion().getId() : null);
+        row.put("selected_index", a.getSelectedIndex());
+        row.put("correct", a.getCorrect());
+        row.put("attempted_at", Ts.iso(a.getAttemptedAt()));
+        return row;
+    }
+
+    @Override
+    protected QuizAttempt fromRow(Map<String, Object> r) {
+        QuizAttempt a = new QuizAttempt();
+        a.setId(asInt(r.get("id")));
+        Integer moduleId = asInt(r.get("module_id"));
+        a.setModule(moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null);
+        Integer questionId = asInt(r.get("question_id"));
+        a.setQuestion(questionId != null ? questionRepository.findById(questionId).orElse(null) : null);
+        a.setSelectedIndex(asInt(r.get("selected_index")));
+        a.setCorrect(asBool(r.get("correct")));
+        a.setAttemptedAt(dt(r.get("attempted_at")));
+        return a;
+    }
+
+    @Override
+    protected Integer idOf(QuizAttempt a) {
+        return a.getId();
+    }
+
+    @Override
+    protected void setId(QuizAttempt a, Integer id) {
+        a.setId(id);
+    }
+
+    public List<QuizAttempt> findByModuleIdOrderByAttemptedAtDesc(Integer moduleId) {
+        List<QuizAttempt> all = findBy("module_id", moduleId);
+        all.sort(Comparator.comparing(QuizAttempt::getAttemptedAt,
+                Comparator.nullsFirst(Comparator.reverseOrder())));
+        return all;
+    }
+
+    public long countByModuleIdAndCorrectTrue(Integer moduleId) {
+        return findBy("module_id", moduleId).stream()
+                .filter(a -> Boolean.TRUE.equals(a.getCorrect()))
+                .count();
+    }
+
+    public long countByModuleId(Integer moduleId) {
+        return findBy("module_id", moduleId).size();
+    }
 }

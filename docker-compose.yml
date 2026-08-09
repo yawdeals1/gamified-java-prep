@@ -18,12 +18,9 @@ services:
       OLLAMA_API_KEY: "${OLLAMA_API_KEY:-}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-}"
       OLLAMA_PROTOCOL: "${OLLAMA_PROTOCOL:-ollama}"
-      # Database (auto-provided by Deploro VPS; entrypoint converts to JDBC)
-      DATABASE_URL_INTERNAL: "${DATABASE_URL_INTERNAL:-}"
-      DATABASE_URL: "${DATABASE_URL:-}"
-      DB_URL: "${DB_URL:-}"
-      DB_USER: "${DB_USER:-}"
-      DB_PASSWORD: "${DB_PASSWORD:-}"
+      # Data store — Deploro Studio REST API (deploro migrate schema + tokens)
+      DEPLORO_API_URL: "${DEPLORO_API_URL:-}"
+      DEPLORO_API_TOKEN: "${DEPLORO_API_TOKEN:-}"
       JAVA_OPTS: "${JAVA_OPTS:--Xmx1g}"
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo ok >&3"]
