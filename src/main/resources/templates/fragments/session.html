@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="session" th:if="${currentUser}">
+    <form method="post" action="/auth/logout" class="flex items-center gap-2.5">
+        <span class="hidden lg:block font-label-sm text-label-sm text-ghost-text max-w-[8rem] truncate"
+              th:text="${currentUser.displayName()}">user</span>
+        <button type="submit"
+                class="font-label-sm text-label-sm uppercase tracking-wider text-ghost-text hover:text-red-400 transition-colors duration-200">
+            Sign out
+        </button>
+    </form>
+</th:block>
+</html>

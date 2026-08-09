@@ -55,6 +55,7 @@
     <div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
         <span class="font-label-sm text-xs text-primary" th:text="${state.totalXp} + ' XP'">0 XP</span>
     </div>
+    <div th:replace="~{fragments/session :: session}"></div>
 </header>
 
 <main class="pt-20 pb-24 px-6" style="max-width:1100px; margin:0 auto;">

@@ -86,9 +86,10 @@
     </nav>
   </div>
   <div class="flex items-center gap-4">
-    <div class="px-3 py-1 bg-primary-container/10 border border-primary/20 rounded-full text-primary font-label-sm text-xs">
-      <span x-text="totalXp"></span> XP · Lv <span x-text="level"></span>
+<div class="px-3 py-1 bg-primary-container/10 border border-primary/20 rounded-full text-primary font-label-sm text-xs">
+      <span x-text="totalXp"></span> XP � Lv <span x-text="level"></span>
     </div>
+    <div th:replace="~{fragments/session :: session}"></div>
   </div>
 </header>
 
