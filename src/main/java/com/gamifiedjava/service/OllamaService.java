@@ -5,14 +5,20 @@ import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.repository.AiConversationRepository;
 import com.gamifiedjava.repository.ModuleRepository;
 import com.gamifiedjava.util.MojibakeRepair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.*;
 
 @Service
 public class OllamaService {
+
+    private static final Logger log = LoggerFactory.getLogger(OllamaService.class);
 
     private final AiConversationRepository conversationRepository;
     private final ModuleRepository moduleRepository;
@@ -126,18 +132,38 @@ public class OllamaService {
                 return "No response from model.";
             }
             return (String) result.getOrDefault("response", "No response from model.");
-        } catch (Exception e) {
+        } catch (RestClientResponseException e) {
+            log.warn("Ollama request failed with HTTP {}", e.getStatusCode().value());
+            return responseError(e.getStatusCode().value());
+        } catch (RestClientException e) {
+            log.warn("Could not reach Ollama at {}: {}", baseUrl, e.getMessage());
             return "Could not reach the AI backend at " + baseUrl + ". Is the service running?";
+        } catch (RuntimeException e) {
+            log.warn("Could not read the Ollama response: {}", e.getMessage());
+            return "Ollama returned an unreadable response. Please try again.";
         }
     }
 
     public boolean validateApiKey(String apiKey) {
         try {
-            Map result = client(apiKey).get().uri("/api/tags").retrieve().body(Map.class);
+            // /api/tags is public on ollama.com and cannot prove that a key is valid.
+            // /api/ps is authenticated and performs no model generation.
+            Map result = client(apiKey).get().uri("/api/ps").retrieve().body(Map.class);
             return result != null;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    static String responseError(int status) {
+        return switch (status) {
+            case 401, 403 -> "Ollama rejected the saved API key. Replace it in the AI API tab.";
+            case 404 -> "The configured Ollama model is unavailable. Please try again shortly.";
+            case 429 -> "Ollama's usage limit was reached. Wait a moment and try again.";
+            default -> status >= 500
+                    ? "Ollama is temporarily unavailable. Please try again shortly."
+                    : "Ollama could not process that request. Please try again.";
+        };
     }
 
     private RestClient client(String apiKey) {

@@ -18,8 +18,8 @@ services:
       APP_ADMIN_AUTH_USER_ID: "${APP_ADMIN_AUTH_USER_ID:-769223c3-f7be-464e-833b-28badc5a8c6f}"
       APP_ADMIN_EMAIL: "${APP_ADMIN_EMAIL:-calebmensah1502@gmail.com}"
       # AI backend (set via deploro vps set-env)
-      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-https://ollama.com}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-gemma4:31b}"
       OLLAMA_PROTOCOL: "${OLLAMA_PROTOCOL:-ollama}"
       # Invitation email delivery (Cloudflare Email Sending REST API)
       CLOUDFLARE_ACCOUNT_ID: "${CLOUDFLARE_ACCOUNT_ID:-}"
