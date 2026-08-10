@@ -32,6 +32,7 @@ public class LessonStepService {
     private final CodeRunnerService codeRunner;
     private final GamificationService gamificationService;
     private final ModuleProgressRepository moduleProgressRepository;
+    private final ModuleService moduleService;
     private final CurrentUserContext users;
     private final LessonCodeValidator codeValidator;
     private final ConcurrentHashMap<String, Object> completionLocks = new ConcurrentHashMap<>();
@@ -42,6 +43,7 @@ public class LessonStepService {
                              CodeRunnerService codeRunner,
                              GamificationService gamificationService,
                              ModuleProgressRepository moduleProgressRepository,
+                             ModuleService moduleService,
                              CurrentUserContext users,
                              LessonCodeValidator codeValidator) {
         this.stepRepository = stepRepository;
@@ -50,6 +52,7 @@ public class LessonStepService {
         this.codeRunner = codeRunner;
         this.gamificationService = gamificationService;
         this.moduleProgressRepository = moduleProgressRepository;
+        this.moduleService = moduleService;
         this.users = users;
         this.codeValidator = codeValidator;
     }
@@ -226,6 +229,10 @@ public class LessonStepService {
             progressRepository.save(sp);
             gamificationService.addXp("step_" + step.getType().toLowerCase(),
                     step.getXpReward(), "Cleared step: " + step.getTitle());
+            long totalSteps = stepRepository.countByModuleId(step.getModule().getId());
+            if (totalSteps > 0 && completedStepIds(step.getModule().getId()).size() >= totalSteps) {
+                moduleService.unlockNextModule(step.getModule().getId());
+            }
             return step.getXpReward();
         }
     }

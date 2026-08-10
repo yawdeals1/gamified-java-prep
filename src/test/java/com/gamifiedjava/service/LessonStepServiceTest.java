@@ -29,6 +29,7 @@ class LessonStepServiceTest {
                 mock(CodeRunnerService.class),
                 mock(GamificationService.class),
                 mock(ModuleProgressRepository.class),
+                mock(ModuleService.class),
                 new CurrentUserContext(),
                 mock(LessonCodeValidator.class));
 

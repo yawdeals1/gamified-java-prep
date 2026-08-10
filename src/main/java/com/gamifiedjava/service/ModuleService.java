@@ -96,19 +96,28 @@ public class ModuleService {
                         .map(module -> progressRepository.save(new ModuleProgress(module)))
                         .orElse(null));
     }
+
+    /** Makes a module available without disturbing progress it may already contain. */
+    public ModuleProgress unlockModule(Integer moduleId) {
+        ModuleProgress progress = getProgress(moduleId);
+        if (progress != null && !progress.isUnlocked()) {
+            progress.setStatus("available");
+            progress.setUpdatedAt(java.time.LocalDateTime.now());
+            return progressRepository.save(progress);
+        }
+        return progress;
+    }
+
     public void unlockNextModule(Integer currentModuleId) {
         CourseModule current = moduleRepository.findById(currentModuleId).orElse(null);
         if (current == null) return;
 
-        CourseModule next = moduleRepository.findBySlug(getSlugForOrder(current.getOrderIndex() + 1)).orElse(null);
+        CourseModule next = moduleRepository.findAllByOrderByOrderIndexAsc().stream()
+                .filter(module -> module.getOrderIndex() == current.getOrderIndex() + 1)
+                .findFirst()
+                .orElse(null);
         if (next == null) return;
-
-        ModuleProgress nextProg = progressRepository.findByModuleId(next.getId()).orElse(null);
-        if (nextProg != null && "locked".equals(nextProg.getStatus())) {
-            nextProg.setStatus("available");
-            nextProg.setUpdatedAt(java.time.LocalDateTime.now());
-            progressRepository.save(nextProg);
-        }
+        unlockModule(next.getId());
     }
     public ModuleProgress completeModuleReading(Integer moduleId) {
         ModuleProgress prog = getProgress(moduleId);
@@ -131,21 +140,6 @@ public class ModuleService {
             unlockNextModule(moduleId);
         }
         return prog;
-    }
-
-    private String getSlugForOrder(int order) {
-        return switch (order) {
-            case 1 -> "variables-and-data-types";
-            case 2 -> "classes-and-objects";
-            case 3 -> "methods";
-            case 4 -> "control-flow";
-            case 5 -> "interfaces-and-inheritance";
-            case 6 -> "generics";
-            case 7 -> "annotations";
-            case 8 -> "packages-and-imports";
-            case 9 -> "lambdas";
-            default -> null;
-        };
     }
 
     private String getChallengeInstructions(int moduleNum) {

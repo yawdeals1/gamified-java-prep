@@ -45,6 +45,11 @@ public class LessonController {
             return "redirect:/";
         }
         var progress = moduleService.getProgress(module.getId());
+        if ((progress == null || !progress.isUnlocked()) && previousModuleIsMastered(module)) {
+            // Repair progress rows created before step completion unlocked the next
+            // module, keeping the dashboard CTA and lesson gate consistent.
+            progress = moduleService.unlockModule(module.getId());
+        }
         if (progress == null || !progress.isUnlocked()) {
             ra.addFlashAttribute("error", "Complete the previous module first.");
             return "redirect:/";
@@ -70,6 +75,16 @@ public class LessonController {
         model.addAttribute("stepsJson", writeJson(clientSteps));
         model.addAttribute("resumeStepIndex", resumeIndex);
         return "learn";
+    }
+
+    private boolean previousModuleIsMastered(CourseModule module) {
+        if (module.getOrderIndex() == null || module.getOrderIndex() <= 1) return true;
+        return moduleService.getAllModules().stream()
+                .filter(candidate -> candidate.getOrderIndex() != null
+                        && candidate.getOrderIndex() == module.getOrderIndex() - 1)
+                .findFirst()
+                .map(previous -> lessonStepService.masteryPercent(previous.getId()) >= 100)
+                .orElse(false);
     }
 
     private String writeJson(Object value) {
