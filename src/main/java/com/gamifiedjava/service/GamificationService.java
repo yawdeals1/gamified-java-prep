@@ -85,7 +85,7 @@ public class GamificationService {
     public void seedAchievements() {
         if (achievementRepository.count() == 0) {
             achievementRepository.save(new Achievement("First Steps", "Complete your first module", "footprints"));
-            achievementRepository.save(new Achievement("Knowledge Seeker", "Pass all quizzes with â‰¥80%", "book"));
+            achievementRepository.save(new Achievement("Knowledge Seeker", "Pass all quizzes with >=80%", "book"));
             achievementRepository.save(new Achievement("Code Warrior", "Pass all code challenges", "sword"));
             achievementRepository.save(new Achievement("Full Stack", "Complete all 9 modules", "trophy"));
             achievementRepository.save(new Achievement("Streak Master", "Maintain a 7-day streak", "fire"));

@@ -2,6 +2,7 @@ package com.gamifiedjava.auth;
 
 import com.gamifiedjava.model.AppUser;
 import com.gamifiedjava.repository.AppUserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,9 +17,18 @@ public class MembershipService {
     private record Cached(Optional<AppUser> user, long expiresAt) {}
 
     private final AppUserRepository repository;
+    private final String adminAuthUserId;
+    private final String adminEmail;
     private final ConcurrentHashMap<String, Cached> cache = new ConcurrentHashMap<>();
 
-    public MembershipService(AppUserRepository repository) { this.repository = repository; }
+    public MembershipService(
+            AppUserRepository repository,
+            @Value("${app.admin-auth-user-id}") String adminAuthUserId,
+            @Value("${app.admin-email}") String adminEmail) {
+        this.repository = repository;
+        this.adminAuthUserId = clean(adminAuthUserId);
+        this.adminEmail = normalize(adminEmail);
+    }
 
     public Optional<AppUser> resolve(AuthUser authUser) {
         if (authUser == null) return Optional.empty();
@@ -34,8 +44,8 @@ public class MembershipService {
         }
         if (found.isEmpty() && authUser.email() != null) {
             found = repository.findByEmail(normalize(authUser.email()));
-            found.ifPresent(member -> bindIdentity(member, authUser));
         }
+        found.ifPresent(member -> bindIdentityAndEnforceRole(member, authUser));
         Optional<AppUser> active = found.filter(AppUser::isActive);
         cache.put(key, new Cached(active, now + CACHE_MILLIS));
         return active;
@@ -58,7 +68,11 @@ public class MembershipService {
         return member;
     }
 
-    public List<AppUser> activeUsers() { return repository.findActive(); }
+    public List<AppUser> activeUsers() {
+        List<AppUser> users = repository.findActive();
+        users.forEach(this::enforceStoredRole);
+        return users;
+    }
 
     public Optional<AppUser> findById(Integer id) { return repository.findById(id); }
 
@@ -69,15 +83,48 @@ public class MembershipService {
         cache.clear();
     }
 
-    private void bindIdentity(AppUser member, AuthUser authUser) {
+    private void bindIdentityAndEnforceRole(AppUser member, AuthUser authUser) {
+        boolean changed = false;
         if (member.getAuthUserId() == null || member.getAuthUserId().isBlank()) {
             member.setAuthUserId(authUser.id());
+            changed = true;
             if (member.getDisplayName() == null || member.getDisplayName().isBlank()) {
                 member.setDisplayName(authUser.name());
             }
+        }
+        AppUser.Role allowedRole = isOwner(member.getAuthUserId(), member.getEmail())
+                ? AppUser.Role.ADMIN : AppUser.Role.MEMBER;
+        if (member.getRole() != allowedRole) {
+            member.setRole(allowedRole);
+            changed = true;
+        }
+        if (changed) {
             member.setUpdatedAt(LocalDateTime.now());
             repository.save(member);
         }
+    }
+
+    private void enforceStoredRole(AppUser member) {
+        AppUser.Role allowedRole = isOwner(member.getAuthUserId(), member.getEmail())
+                ? AppUser.Role.ADMIN : AppUser.Role.MEMBER;
+        if (member.getRole() != allowedRole) {
+            member.setRole(allowedRole);
+            member.setUpdatedAt(LocalDateTime.now());
+            repository.save(member);
+            cache.clear();
+        }
+    }
+
+    private boolean isOwner(String authUserId, String email) {
+        String cleanAuthUserId = clean(authUserId);
+        if (!cleanAuthUserId.isBlank()) {
+            return !adminAuthUserId.isBlank() && adminAuthUserId.equals(cleanAuthUserId);
+        }
+        return !adminEmail.isBlank() && adminEmail.equals(normalize(email));
+    }
+
+    private static String clean(String value) {
+        return value == null ? "" : value.trim();
     }
 
     public static String normalize(String email) {

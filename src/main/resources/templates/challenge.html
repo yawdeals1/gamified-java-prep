@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="'JAVA_CORE | Challenge Â· ' + ${module.title}">JAVA_CORE | Challenge</title>
+    <title th:text="'JAVA_CORE | Challenge | ' + ${module.title}">JAVA_CORE | Challenge</title>
     <link rel="stylesheet" href="/css/app.css"/>
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
@@ -68,7 +68,7 @@
             <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-sm"
                       style="font-variation-settings:'FILL' 0;">code</span>
-                <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">Your Solution Â· Main.java</span>
+                <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">Your Solution | Main.java</span>
             </div>
             <textarea id="editor" name="sourceCode" spellcheck="false"
                       onkeydown="if(event.key==='Tab'){event.preventDefault();var s=this.selectionStart;this.value=this.value.substring(0,s)+'    '+this.value.substring(this.selectionEnd);this.selectionStart=this.selectionEnd=s+4;}"

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="'JAVA_CORE | Quiz Â· ' + ${module.title}">JAVA_CORE | Quiz</title>
+    <title th:text="'JAVA_CORE | Quiz | ' + ${module.title}">JAVA_CORE | Quiz</title>
     <link rel="stylesheet" href="/css/app.css"/>
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
@@ -63,7 +63,7 @@
             </div>
             <div class="flex items-center gap-2" x-show="streak >= 2">
                 <span class="material-symbols-outlined text-secondary text-lg" style="font-variation-settings:'FILL' 1;">local_fire_department</span>
-                <span class="font-label-sm text-xs text-secondary font-bold" x-text="streak + 'Ã— STREAK'"></span>
+                <span class="font-label-sm text-xs text-secondary font-bold" x-text="streak + 'x STREAK'"></span>
             </div>
         </div>
 
@@ -79,10 +79,10 @@
                 <h2 class="font-headline-lg text-2xl text-primary-text mb-2">Quiz complete!</h2>
                 <p class="font-body-md text-ghost-text mb-2">
                     <span x-text="correctCount">0</span> / <span x-text="questions.length">0</span> correct
-                    Â· <span class="text-secondary" x-text="timerDisplay">0:00</span>
+                    | <span class="text-secondary" x-text="timerDisplay">0:00</span>
                 </p>
                 <p x-show="streak >= 3" class="font-label-sm text-xs text-secondary mb-6">
-                    ðŸ”¥ <span x-text="'Best streak: ' + bestStreak + 'Ã—'"></span>
+                     <span x-text="'Best streak: ' + bestStreak + 'x'"></span>
                 </p>
                 <button @click="$el.closest('form') ? null : null; document.getElementById('submit-form').submit()"
                         class="px-8 py-3 bg-primary text-on-primary font-bold rounded-xl flex items-center gap-2 mx-auto hover:brightness-110 active:-translate-y-px transition-all">

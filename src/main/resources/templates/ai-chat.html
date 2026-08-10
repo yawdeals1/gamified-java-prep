@@ -49,7 +49,7 @@
         <div class="w-7 h-7 rounded-full bg-primary-container/20 flex items-center justify-center">
             <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings:'FILL' 1;">smart_toy</span>
         </div>
-        <span class="font-label-sm text-xs text-ghost-text">Java Tutor Â· gemma4</span>
+        <span class="font-label-sm text-xs text-ghost-text">Java Tutor | gemma4</span>
     </div>
     <div th:replace="~{fragments/session :: session}"></div>
 </header>
@@ -63,7 +63,7 @@
         <!-- Greeting -->
         <div class="flex justify-start">
             <div class="max-w-[75%] bg-surface-container-high rounded-2xl rounded-tl-none px-5 py-3 text-sm text-on-surface-variant border border-hairline/10 leading-relaxed">
-                Ask me anything about Java â€” concepts, debugging, Spring Boot, anything. I'll explain without giving away answers to your challenges.
+                Ask me anything about Java - concepts, debugging, Spring Boot, anything. I'll explain without giving away answers to your challenges.
             </div>
         </div>
 
@@ -120,7 +120,7 @@
     <div class="flex-none px-4 pb-4">
         <form id="chat-form" class="flex gap-3 items-end" onsubmit="sendMessage(event)">
             <textarea id="chat-input" rows="1"
-                      placeholder="Ask a Java questionâ€¦"
+                      placeholder="Ask a Java question..."
                       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();document.getElementById('chat-form').dispatchEvent(new Event('submit'));}"
                       class="flex-1 resize-none bg-surface-container-lowest border border-hairline rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary/50 leading-relaxed max-h-32 overflow-y-auto custom-scrollbar"></textarea>
             <button type="submit"
@@ -139,7 +139,7 @@
         if (typeof marked !== 'undefined') {
             try {
                 const raw = marked.parse(text, { gfm: true, breaks: true });
-                // marked passes raw HTML through â€” AI output is untrusted
+                // marked passes raw HTML through - AI output is untrusted
                 // (prompt injection can make the model emit <script>/onerror HTML).
                 if (typeof DOMPurify !== 'undefined') {
                     return DOMPurify.sanitize(raw, {
@@ -210,7 +210,7 @@
         })
         .then(r => r.json())
         .then(d => { setLoading(false); addMessage('assistant', d.response || 'No response.'); })
-        .catch(() => { setLoading(false); addMessage('assistant', 'Error â€” is Ollama running at localhost:11434?'); });
+        .catch(() => { setLoading(false); addMessage('assistant', 'Error - is Ollama running at localhost:11434?'); });
     }
 
     function quickAsk(question) {

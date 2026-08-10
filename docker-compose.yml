@@ -15,6 +15,8 @@ services:
       DEPLORO_AUTH_SLUG: "${DEPLORO_AUTH_SLUG:-}"
       APP_PUBLIC_BASE_URL: "${APP_PUBLIC_BASE_URL:-https://gamified-java-prep.deploro.app}"
       APP_ENCRYPTION_KEY: "${APP_ENCRYPTION_KEY:-}"
+      APP_ADMIN_AUTH_USER_ID: "${APP_ADMIN_AUTH_USER_ID:-769223c3-f7be-464e-833b-28badc5a8c6f}"
+      APP_ADMIN_EMAIL: "${APP_ADMIN_EMAIL:-calebmensah1502@gmail.com}"
       # AI backend (set via deploro vps set-env)
       OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-}"
@@ -26,7 +28,7 @@ services:
       INVITE_FROM_NAME: "${INVITE_FROM_NAME:-JAVA_CORE}"
       INVITE_MAILER_URL: "${INVITE_MAILER_URL:-}"
       INVITE_MAILER_SECRET: "${INVITE_MAILER_SECRET:-}"
-      # Data store â€” Deploro Studio REST API (deploro migrate schema + tokens)
+      # Data store - Deploro Studio REST API (deploro migrate schema + tokens)
       DEPLORO_API_URL: "${DEPLORO_API_URL:-}"
       DEPLORO_API_TOKEN: "${DEPLORO_API_TOKEN:-}"
       JAVA_OPTS: "${JAVA_OPTS:--Xmx1g}"

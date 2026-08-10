@@ -12,7 +12,7 @@
 <script src="/js/vendor/marked.min.js"></script>
 <script src="/js/vendor/purify.min.js"></script>
 <style>
-  /* Markdown prose â€” dark cockpit theme */
+  /* Markdown prose - dark cockpit theme */
   .md-body h1,.md-body h2,.md-body h3 { color:#EAF2EF; font-family:Geist,sans-serif; font-weight:600; margin:.7em 0 .35em; }
   .md-body h1 { font-size:1.25rem; } .md-body h2 { font-size:1.1rem; } .md-body h3 { font-size:1rem; }
   .md-body p { margin:.45em 0; line-height:1.6; }
@@ -165,7 +165,7 @@
                  x-text="current.type === 'PREDICT_OUTPUT' ? 'Your prediction' : 'Your answer'"></label>
           <input x-model="answer" @keydown.enter="check()" type="text" spellcheck="false"
                  class="w-full bg-surface-container-lowest border border-hairline rounded-lg py-3 px-4 font-code-md text-sm focus:outline-none focus:border-primary/50"
-                 placeholder="Type hereâ€¦"/>
+                 placeholder="Type here..."/>
         </div>
 
         <!-- Feedback -->
@@ -231,7 +231,7 @@
         <form @submit.prevent="askTutor(customQ); customQ=''" class="flex gap-2">
           <input x-model="customQ" type="text"
                  class="flex-1 bg-surface-container-lowest border border-hairline rounded-xl py-2.5 pl-4 pr-3 text-sm focus:outline-none focus:border-primary/50"
-                 placeholder="Ask the tutorâ€¦"/>
+                 placeholder="Ask the tutor..."/>
           <button type="submit" :disabled="tutorLoading || !customQ.trim()"
                   class="px-3 py-2 bg-primary/10 border border-primary/30 rounded-xl text-primary disabled:opacity-40 transition-all hover:bg-emerald-wash">
             <span class="material-symbols-outlined text-sm">send</span>
@@ -280,7 +280,7 @@
     if (!text) return '';
     if (typeof marked === 'undefined') return text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
     try {
-      // marked passes raw HTML through â€” AI output (tutorMsg) is untrusted
+      // marked passes raw HTML through - AI output (tutorMsg) is untrusted
       // (prompt injection can make the model emit script/onerror HTML).
       const raw = marked.parse(text, { breaks: true, gfm: true });
       if (typeof DOMPurify !== 'undefined') {
@@ -352,7 +352,7 @@
       },
 
       async runDemo() {
-        this.busy = true; this.demoConsole = 'Runningâ€¦'; this.demoConsoleError = false;
+        this.busy = true; this.demoConsole = 'Running...'; this.demoConsoleError = false;
         try {
           const r = await fetch('/api/run', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -366,7 +366,7 @@
       },
 
       async run() {
-        this.busy = true; this.console = 'Runningâ€¦'; this.consoleError = false;
+        this.busy = true; this.console = 'Running...'; this.consoleError = false;
         try {
           const r = await fetch('/api/run', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -426,7 +426,7 @@
         };
         const contextType = contextMap[mode] || 'ask';
         const isCustom = !contextMap[mode];
-        this.tutorMsg = 'â€¦';
+        this.tutorMsg = '...';
         this.tutorLoading = true;
         try {
           const params = new URLSearchParams();
@@ -436,7 +436,7 @@
               ? 'Please review this code:\n```java\n' + this.code + '\n```'
               : (mode === 'Explain this step')
                 ? 'Explain this step: ' + (this.current.title || '') + '. ' + (this.current.body || '') + stepCode
-                : 'Give me a hint for this step â€” "' + (this.current.title || '') + '".' + stepCode + ' Do not give away the answer, just guide my thinking.';
+                : 'Give me a hint for this step - "' + (this.current.title || '') + '".' + stepCode + ' Do not give away the answer, just guide my thinking.';
           params.append('message', msg);
           params.append('context', contextType);
           if (this.moduleId) params.append('moduleId', this.moduleId);

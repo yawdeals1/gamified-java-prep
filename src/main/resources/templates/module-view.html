@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="'JAVA_CORE | Docs Â· ' + ${module.title}">JAVA_CORE | Docs</title>
+    <title th:text="'JAVA_CORE | Docs | ' + ${module.title}">JAVA_CORE | Docs</title>
     <link rel="stylesheet" href="/css/app.css"/>
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
@@ -82,7 +82,7 @@
     <div class="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
             <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest"
-                  th:text="'Module ' + ${module.orderIndex} + ' Â· Reference Docs'">Docs</span>
+                  th:text="'Module ' + ${module.orderIndex} + ' | Reference Docs'">Docs</span>
             <h1 class="font-headline-lg text-3xl text-primary-text font-bold mt-1"
                 th:text="${module.title}">Title</h1>
             <p class="font-body-md text-sm text-ghost-text mt-1.5" th:text="${module.description}"></p>
@@ -112,7 +112,7 @@
             <p class="font-label-sm text-xs text-ghost-text">No reference docs for this module yet.</p>
             <a th:href="@{/learn/{slug}(slug=${module.slug})}"
                class="mt-4 inline-flex px-5 py-2 bg-primary text-on-primary rounded-xl font-label-sm text-sm font-bold hover:brightness-110 transition-all">
-                Go to Lesson â†’
+                Go to Lesson ->
             </a>
         </div>
     </div>

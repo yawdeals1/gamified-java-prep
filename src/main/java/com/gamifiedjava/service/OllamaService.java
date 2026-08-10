@@ -4,6 +4,7 @@ import com.gamifiedjava.model.AiConversation;
 import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.repository.AiConversationRepository;
 import com.gamifiedjava.repository.ModuleRepository;
+import com.gamifiedjava.util.MojibakeRepair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -59,7 +60,7 @@ public class OllamaService {
             request.put("stream", false);
         }
 
-        String finalResponse = callModel(request, requiredKey(authUserId));
+        String finalResponse = MojibakeRepair.repair(callModel(request, requiredKey(authUserId)));
 
         ConversationLogger.log(conversationRepository, "user", message, mod, contextType);
         ConversationLogger.log(conversationRepository, "assistant", finalResponse, mod, contextType);
@@ -102,7 +103,7 @@ public class OllamaService {
             request.put("stream", false);
         }
 
-        return callModel(request, requiredKey(authUserId));
+        return MojibakeRepair.repair(callModel(request, requiredKey(authUserId)));
     }
 
     private String callModel(Map<String, Object> request, String apiKey) {
