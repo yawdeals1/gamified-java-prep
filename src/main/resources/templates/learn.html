@@ -5,8 +5,8 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title th:text="'JAVA_CORE | ' + ${module.title}">JAVA_CORE | Lesson Player</title>
 <link rel="stylesheet" href="/css/app.css"/>
-    <link rel="stylesheet" href="/css/fonts.css?v=3" media="print" onload="this.media='all'"/>
-    <noscript><link href="/css/fonts.css?v=3" rel="stylesheet"/></noscript>
+    <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
+    <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
 
 <script defer src="/js/vendor/alpine.min.js"></script>
 <script src="/js/vendor/marked.min.js"></script>
@@ -58,6 +58,7 @@
       <a href="/" class="font-label-sm text-xs uppercase tracking-wider text-primary border-b-2 border-primary pb-1">Skill Map</a>
       <a th:href="@{/module/{s}(s=${module.slug})}" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface-variant transition-colors">Docs</a>
       <a href="/sandbox" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface-variant transition-colors">Sandbox</a>
+      <a href="/ai-api" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface-variant transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-sm">key</span>AI API</a>
     </nav>
   </div>
   <div class="flex items-center gap-4">

@@ -2,6 +2,8 @@ package com.gamifiedjava.controller;
 
 import com.gamifiedjava.auth.AuthService;
 import com.gamifiedjava.auth.AuthUser;
+import com.gamifiedjava.auth.MembershipService;
+import com.gamifiedjava.service.InvitationService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,17 +16,19 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 @Controller
 public class AuthController {
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
-
     private final AuthService authService;
+    private final MembershipService membershipService;
+    private final InvitationService invitationService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, MembershipService membershipService,
+                          InvitationService invitationService) {
         this.authService = authService;
+        this.membershipService = membershipService;
+        this.invitationService = invitationService;
     }
 
     @GetMapping("/auth/login")
@@ -33,32 +37,53 @@ public class AuthController {
         return "auth/login";
     }
 
-    @GetMapping("/auth/signup")
-    public String signupPage(HttpServletRequest request) {
-        if (request.getAttribute("authUser") != null) return "redirect:/";
-        return "auth/signup";
-    }
-
     @GetMapping("/auth/confirm")
     public String confirmPage() {
         return "auth/confirm";
     }
 
-    @PostMapping("/auth/signup")
-    public String signup(@RequestParam String email,
-                         @RequestParam String password,
-                         @RequestParam(required = false) String name,
-                         Model model) {
-        String cleaned = email == null ? "" : email.trim().toLowerCase();
-        if (!EMAIL_PATTERN.matcher(cleaned).matches()) {
-            model.addAttribute("error", "Please enter a valid email address.");
-            return "auth/signup";
+    @GetMapping("/auth/invite")
+    public String invitePage(@RequestParam String token, Model model) {
+        var invitation = invitationService.valid(token);
+        if (invitation.isEmpty()) {
+            model.addAttribute("invalidInvite", true);
+            return "auth/invite";
+        }
+        model.addAttribute("email", invitation.get().getEmail());
+        model.addAttribute("token", token);
+        return "auth/invite";
+    }
+
+    @PostMapping("/auth/invite")
+    public String acceptInvite(@RequestParam String token,
+                               @RequestParam String password,
+                               @RequestParam String password2,
+                               @RequestParam String name,
+                               Model model) {
+        var invitation = invitationService.valid(token);
+        if (invitation.isEmpty()) {
+            model.addAttribute("invalidInvite", true);
+            return "auth/invite";
+        }
+        model.addAttribute("email", invitation.get().getEmail());
+        model.addAttribute("token", token);
+        if (name == null || name.trim().length() < 2) {
+            model.addAttribute("error", "Please enter your name.");
+            return "auth/invite";
         }
         if (password == null || password.length() < 8) {
             model.addAttribute("error", "Password must be at least 8 characters.");
-            return "auth/signup";
+            return "auth/invite";
         }
-        authService.signup(cleaned, password, name);
+        if (!password.equals(password2)) {
+            model.addAttribute("error", "Passwords do not match.");
+            return "auth/invite";
+        }
+        if (!authService.signup(invitation.get().getEmail(), password, name.trim())) {
+            model.addAttribute("error", "Account creation is temporarily unavailable. Please try again.");
+            return "auth/invite";
+        }
+        invitationService.accept(token, name.trim());
         return "redirect:/auth/confirm";
     }
 
@@ -77,6 +102,10 @@ public class AuthController {
                 password == null ? "" : password);
         if (result.user() == null) {
             model.addAttribute("error", result.error());
+            return "auth/login";
+        }
+        if (membershipService.resolve(result.user()).isEmpty()) {
+            model.addAttribute("error", "This account has not been invited or its access was removed.");
             return "auth/login";
         }
 

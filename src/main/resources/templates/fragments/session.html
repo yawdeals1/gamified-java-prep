@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="session" th:if="${currentUser}">
+    <div class="flex items-center gap-3">
+        <a th:if="${isAdmin}" href="/admin" aria-label="Admin panel"
+           class="font-label-sm text-label-sm uppercase tracking-wider text-secondary hover:text-primary transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-base">admin_panel_settings</span><span class="hidden xl:inline">Admin</span>
+        </a>
     <form method="post" action="/auth/logout" class="flex items-center gap-2.5">
         <span class="hidden lg:block font-label-sm text-label-sm text-ghost-text max-w-[8rem] truncate"
               th:text="${currentUser.displayName()}">user</span>
@@ -9,5 +14,6 @@
             Sign out
         </button>
     </form>
+    </div>
 </th:block>
 </html>

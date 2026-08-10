@@ -40,7 +40,7 @@ public class Achievement {
         return switch (icon.toLowerCase()) {
             case "footprints", "foot", "steps" -> "footprint";
             case "book"                          -> "menu_book";
-            case "sword", "swords"               -> "swords";
+            case "sword", "swords"               -> "code";
             case "trophy"                        -> "emoji_events";
             case "fire", "flame"                 -> "local_fire_department";
             case "brain", "mind"                 -> "psychology";

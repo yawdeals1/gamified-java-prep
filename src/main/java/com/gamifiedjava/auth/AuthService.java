@@ -55,15 +55,16 @@ public class AuthService {
         return URI.create(baseUrl + "/auth/" + slug + path);
     }
 
-    public void signup(String email, String password, String name) {
+    public boolean signup(String email, String password, String name) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("email", email);
         body.put("password", password);
         if (name != null && !name.isBlank()) body.put("name", name);
         try {
             restClient.post().uri(authUri("/email-password/signup")).body(body).retrieve().toBodilessEntity();
+            return true;
         } catch (RestClientResponseException ignored) {
-            // Deploro returns {ok:true} for every signup outcome; treat 4xx/5xx as a quiet failure
+            return false;
         }
     }
 

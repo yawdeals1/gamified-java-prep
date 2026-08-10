@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accept invitation — JAVA_CORE</title>
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/fonts.css?v=4">
+</head>
+<body class="bg-gray-950 text-gray-100 font-mono antialiased min-h-screen flex items-center justify-center px-4">
+<div class="w-full max-w-md">
+    <div class="text-center mb-8">
+        <img src="/img/favicon.svg" alt="" class="w-10 h-10 mx-auto mb-3 rounded-lg">
+        <h1 class="text-xl font-bold tracking-tight">Join <span class="text-emerald-400">JAVA_CORE</span></h1>
+        <p class="text-gray-500 text-xs mt-2">Create your invited member account</p>
+    </div>
+
+    <div th:if="${invalidInvite}" class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
+        <span class="material-symbols-outlined text-red-400 text-3xl mb-3">link_off</span>
+        <h2 class="text-sm font-bold mb-2">Invitation unavailable</h2>
+        <p class="text-gray-500 text-xs leading-relaxed mb-5">This link is invalid, expired, or has already been used. Ask an administrator for a new invitation.</p>
+        <a href="/auth/login" class="text-emerald-400 text-xs hover:text-emerald-300">Back to sign in</a>
+    </div>
+
+    <div th:unless="${invalidInvite}">
+        <div th:if="${error}" class="mb-4 bg-red-950/60 border border-red-800 text-red-300 text-xs rounded-lg px-4 py-3" th:text="${error}">Error</div>
+        <form method="post" action="/auth/invite" class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+            <input type="hidden" name="token" th:value="${token}">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1.5" for="email">EMAIL</label>
+                <input id="email" type="email" th:value="${email}" readonly
+                       class="w-full bg-gray-950/60 border border-gray-800 rounded-lg px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1.5" for="name">NAME</label>
+                <input id="name" name="name" type="text" required minlength="2" autofocus autocomplete="name"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1.5" for="password">PASSWORD <span class="text-gray-600">(8+ chars)</span></label>
+                <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1.5" for="password2">CONFIRM PASSWORD</label>
+                <input id="password2" name="password2" type="password" required minlength="8" autocomplete="new-password"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400">
+            </div>
+            <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm rounded-lg py-2.5 transition-colors">Create Member Account</button>
+        </form>
+        <p class="text-center text-xs text-gray-500 mt-5">This invitation creates member access only.</p>
+    </div>
+</div>
+</body>
+</html>

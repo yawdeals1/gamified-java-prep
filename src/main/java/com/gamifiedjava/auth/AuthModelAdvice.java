@@ -11,4 +11,9 @@ public class AuthModelAdvice {
     public AuthUser currentUser(HttpServletRequest request) {
         return (AuthUser) request.getAttribute("authUser");
     }
+
+    @ModelAttribute("isAdmin")
+    public boolean isAdmin(HttpServletRequest request) {
+        return Boolean.TRUE.equals(request.getAttribute("isAdmin"));
+    }
 }

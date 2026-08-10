@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>JAVA_CORE | AI API</title>
+    <link rel="stylesheet" href="/css/app.css"><link rel="stylesheet" href="/css/fonts.css?v=4"><style>body{background:#0B0F0E;color:#EAF2EF;-webkit-font-smoothing:antialiased}</style></head>
+<body class="font-body-md min-h-screen">
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6"><a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a><nav class="hidden md:flex gap-6">
+        <a href="/" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">Skill Map</a><a href="/achievements" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">Achievements</a><a href="/ai/chat" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">AI Tutor</a>
+        <a href="/ai-api" class="font-label-sm text-xs uppercase tracking-wider text-primary border-b-2 border-primary pb-1 flex items-center gap-1"><span class="material-symbols-outlined text-sm">key</span>AI API</a><a href="/profile" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">Profile</a>
+    </nav></div><div th:replace="~{fragments/session :: session}"></div>
+</header>
+<main class="pt-24 pb-20 px-6 max-w-2xl mx-auto">
+    <div class="mb-8"><div class="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4"><span class="material-symbols-outlined text-primary text-2xl">key</span></div>
+        <h1 class="font-headline-lg text-3xl mb-2">AI API</h1><p class="text-ghost-text text-sm leading-relaxed">Connect your own Ollama account to use the tutor and AI code review. Keys are verified against Ollama and encrypted before storage.</p></div>
+    <div th:if="${success}" class="mb-5 border border-primary/30 bg-primary/10 text-primary rounded-xl px-4 py-3 text-sm" th:text="${success}"></div>
+    <div th:if="${error}" class="mb-5 border border-red-800 bg-red-950/40 text-red-300 rounded-xl px-4 py-3 text-sm" th:text="${error}"></div>
+    <div th:unless="${encryptionReady}" class="mb-5 border border-secondary/30 bg-secondary/10 text-secondary rounded-xl px-4 py-3 text-sm">Secure key storage is not configured on this server yet.</div>
+    <section class="bg-panel-slate border border-hairline rounded-2xl p-6">
+        <div th:if="${configured}" class="flex items-center justify-between rounded-xl bg-primary/5 border border-primary/20 p-4 mb-6"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">verified</span><div><p class="text-sm">Ollama key connected</p><p class="text-xs text-ghost-text" th:text="'Ending in ••••' + ${lastFour}"></p></div></div>
+            <form method="post" action="/ai-api/remove"><button class="text-red-400 hover:text-red-300 text-xs">Remove</button></form></div>
+        <form method="post" action="/ai-api" class="space-y-4">
+            <div><label for="apiKey" class="block text-xs uppercase tracking-wider text-ghost-text mb-2">Ollama API key</label><input id="apiKey" name="apiKey" type="password" required minlength="12" autocomplete="off" placeholder="Paste your key"
+                th:disabled="${!encryptionReady}" class="w-full bg-cockpit-base border border-hairline rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary disabled:opacity-40"></div>
+            <div class="flex items-center justify-between gap-4"><a href="https://ollama.com/settings/keys" target="_blank" rel="noopener" class="text-primary text-xs hover:underline">Create a key at ollama.com ↗</a>
+                <button type="submit" th:disabled="${!encryptionReady}" class="bg-primary text-on-primary font-bold rounded-xl px-5 py-2.5 text-sm disabled:opacity-40" th:text="${configured ? 'Replace Key' : 'Verify & Save'}">Verify & Save</button></div>
+        </form>
+    </section>
+    <p class="text-xs text-ghost-text/70 leading-relaxed mt-5"><span class="material-symbols-outlined text-sm align-middle mr-1">lock</span>Your key is never shown again and is sent only to Ollama over HTTPS.</p>
+</main></body></html>

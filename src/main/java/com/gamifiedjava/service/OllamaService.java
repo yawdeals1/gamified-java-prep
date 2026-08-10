@@ -13,10 +13,10 @@ import java.util.*;
 @Service
 public class OllamaService {
 
-    private final RestClient restClient;
     private final AiConversationRepository conversationRepository;
     private final ModuleRepository moduleRepository;
     private final GamificationService gamificationService;
+    private final UserAiSettingsService aiSettingsService;
 
     @Value("${ollama.model}")
     private String model;
@@ -27,17 +27,17 @@ public class OllamaService {
     @Value("${ollama.base-url}")
     private String baseUrl;
 
-    public OllamaService(RestClient ollamaRestClient,
-                         AiConversationRepository conversationRepository,
+    public OllamaService(AiConversationRepository conversationRepository,
                          ModuleRepository moduleRepository,
-                         GamificationService gamificationService) {
-        this.restClient = ollamaRestClient;
+                         GamificationService gamificationService,
+                         UserAiSettingsService aiSettingsService) {
         this.conversationRepository = conversationRepository;
         this.moduleRepository = moduleRepository;
         this.gamificationService = gamificationService;
+        this.aiSettingsService = aiSettingsService;
     }
 
-    public String ask(String message, Integer moduleId, String contextType) {
+    public String ask(String message, Integer moduleId, String contextType, String authUserId) {
         CourseModule mod = moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null;
 
         String systemPrompt = buildSystemPrompt(mod, contextType);
@@ -59,7 +59,7 @@ public class OllamaService {
             request.put("stream", false);
         }
 
-        String finalResponse = callModel(request);
+        String finalResponse = callModel(request, requiredKey(authUserId));
 
         ConversationLogger.log(conversationRepository, "user", message, mod, contextType);
         ConversationLogger.log(conversationRepository, "assistant", finalResponse, mod, contextType);
@@ -74,7 +74,7 @@ public class OllamaService {
         return finalResponse;
     }
 
-    public String gradeCode(String code, Integer moduleId) {
+    public String gradeCode(String code, Integer moduleId, String authUserId) {
         CourseModule mod = moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null;
         String moduleContext = mod != null ?
                 "Module: " + mod.getTitle() + "\nChallenge: " + mod.getChallengeInstructions() :
@@ -102,13 +102,13 @@ public class OllamaService {
             request.put("stream", false);
         }
 
-        return callModel(request);
+        return callModel(request, requiredKey(authUserId));
     }
 
-    private String callModel(Map<String, Object> request) {
+    private String callModel(Map<String, Object> request, String apiKey) {
         try {
             String uri = "openai".equalsIgnoreCase(protocol) ? "/v1/chat/completions" : "/api/generate";
-            Map result = restClient.post()
+            Map result = client(apiKey).post()
                     .uri(uri)
                     .body(request)
                     .retrieve()
@@ -128,6 +128,27 @@ public class OllamaService {
         } catch (Exception e) {
             return "Could not reach the AI backend at " + baseUrl + ". Is the service running?";
         }
+    }
+
+    public boolean validateApiKey(String apiKey) {
+        try {
+            Map result = client(apiKey).get().uri("/api/tags").retrieve().body(Map.class);
+            return result != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private RestClient client(String apiKey) {
+        return RestClient.builder()
+                .baseUrl(baseUrl)
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .build();
+    }
+
+    private String requiredKey(String authUserId) {
+        return aiSettingsService.apiKey(authUserId)
+                .orElseThrow(() -> new IllegalStateException("Add your Ollama API key in the AI API tab first."));
     }
 
     public List<AiConversation> getConversationHistory() {

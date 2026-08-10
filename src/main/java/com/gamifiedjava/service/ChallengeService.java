@@ -37,7 +37,7 @@ public class ChallengeService {
         this.ollamaService = ollamaService;
         this.gamificationService = gamificationService;
     }
-    public ChallengeResult submit(Integer moduleId, String sourceCode) {
+    public ChallengeResult submit(Integer moduleId, String sourceCode, String authUserId) {
         CourseModule mod = moduleRepository.findById(moduleId).orElse(null);
         if (mod == null) {
             return new ChallengeResult(false, "Module not found", "", null, false);
@@ -75,7 +75,7 @@ public class ChallengeService {
 
         if (compileResult.success()) {
             try {
-                aiFeedback = ollamaService.gradeCode(sourceCode, moduleId);
+                aiFeedback = ollamaService.gradeCode(sourceCode, moduleId, authUserId);
                 aiScore = extractScore(aiFeedback);
                 passed = aiScore != null && aiScore >= 70;
             } catch (Exception e) {

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAVA_CORE | Admin</title>
+    <link rel="stylesheet" href="/css/app.css"><link rel="stylesheet" href="/css/fonts.css?v=4">
+    <style>body{background:#0B0F0E;color:#EAF2EF;-webkit-font-smoothing:antialiased}</style>
+</head>
+<body class="font-body-md min-h-screen">
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-cockpit-base border-b border-hairline">
+    <div class="flex items-center gap-6"><a href="/" class="font-stat-lg text-xl text-primary-fixed tracking-tighter">JAVA_CORE</a>
+        <nav class="hidden md:flex gap-6">
+            <a href="/" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">Skill Map</a>
+            <a href="/achievements" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">Achievements</a>
+            <a href="/ai/chat" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">AI Tutor</a>
+            <a href="/ai-api" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface flex items-center gap-1"><span class="material-symbols-outlined text-sm">key</span>AI API</a>
+            <a href="/profile" class="font-label-sm text-xs uppercase tracking-wider text-ghost-text hover:text-on-surface">Profile</a>
+        </nav>
+    </div>
+    <div th:replace="~{fragments/session :: session}"></div>
+</header>
+<main class="pt-24 pb-20 px-6 max-w-5xl mx-auto">
+    <div class="flex items-start justify-between mb-8">
+        <div><div class="flex items-center gap-2 text-primary mb-2"><span class="material-symbols-outlined">admin_panel_settings</span><span class="font-label-sm text-xs uppercase tracking-widest">RBAC Admin</span></div>
+            <h1 class="font-headline-lg text-3xl mb-1">Member access</h1><p class="text-ghost-text text-sm">Invite members and revoke access. New accounts always receive the MEMBER role.</p></div>
+    </div>
+    <div th:if="${success}" class="mb-5 border border-primary/30 bg-primary/10 text-primary rounded-xl px-4 py-3 text-sm" th:text="${success}"></div>
+    <div th:if="${error}" class="mb-5 border border-red-800 bg-red-950/40 text-red-300 rounded-xl px-4 py-3 text-sm" th:text="${error}"></div>
+    <div th:unless="${emailReady}" class="mb-5 border border-secondary/30 bg-secondary/10 text-secondary rounded-xl px-4 py-3 text-sm">Invitation delivery needs Cloudflare Email API credentials. The form will remain safely blocked until they are configured.</div>
+
+    <section class="bg-panel-slate border border-hairline rounded-2xl p-6 mb-8">
+        <h2 class="font-headline-md text-lg mb-1">Invite a member</h2><p class="text-ghost-text text-xs mb-5">They receive a 48-hour link with their email already filled in.</p>
+        <form method="post" action="/admin/invite" class="flex flex-col sm:flex-row gap-3">
+            <input name="email" type="email" required placeholder="member@example.com" th:disabled="${!emailReady}"
+                   class="flex-1 bg-cockpit-base border border-hairline rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary disabled:opacity-40">
+            <button type="submit" th:disabled="${!emailReady}" class="bg-primary text-on-primary font-bold rounded-xl px-6 py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-40">
+                <span class="material-symbols-outlined text-base">send</span>Invite
+            </button>
+        </form>
+    </section>
+
+    <section class="bg-panel-slate border border-hairline rounded-2xl overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-hairline"><h2 class="font-headline-md text-lg">Active accounts</h2></div>
+        <div th:each="member : ${members}" class="px-6 py-4 border-b border-hairline last:border-0 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><span class="material-symbols-outlined text-primary">person</span></div>
+                <div class="min-w-0"><p class="text-sm truncate" th:text="${member.displayName != null and !member.displayName.isBlank() ? member.displayName : member.email}"></p><p class="text-xs text-ghost-text truncate" th:text="${member.email}"></p></div>
+                <span class="text-[10px] uppercase tracking-wider rounded-full px-2 py-1 border" th:classappend="${member.role.name() == 'ADMIN'} ? 'border-secondary/30 text-secondary' : 'border-primary/20 text-primary'" th:text="${member.role}"></span>
+            </div>
+            <form th:if="${member.role.name() != 'ADMIN'}" method="post" th:action="@{'/admin/members/' + ${member.id} + '/remove'}" onsubmit="return confirm('Remove this member and revoke their login?')">
+                <button class="text-red-400 hover:text-red-300 text-xs flex items-center gap-1"><span class="material-symbols-outlined text-base">person_remove</span>Remove</button>
+            </form>
+        </div>
+    </section>
+
+    <section th:if="${!pendingInvites.empty}" class="bg-panel-slate border border-hairline rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-hairline"><h2 class="font-headline-md text-lg">Pending invitations</h2></div>
+        <div th:each="invite : ${pendingInvites}" class="px-6 py-4 border-b border-hairline last:border-0 flex justify-between text-sm"><span th:text="${invite.email}"></span><span class="text-ghost-text text-xs" th:text="'Expires ' + ${#temporals.format(invite.expiresAt, 'MMM d, HH:mm')}"></span></div>
+    </section>
+</main>
+</body></html>

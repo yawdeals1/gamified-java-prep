@@ -6,23 +6,27 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Set;
 
 @Component
+@Order(10)
 public class AuthFilter extends OncePerRequestFilter {
 
     private static final Set<String> PUBLIC_PATHS = Set.of(
-            "/auth/login", "/auth/signup", "/auth/confirm",
+            "/auth/login", "/auth/invite", "/auth/confirm",
             "/auth/logout", "/auth/status", "/error", "/favicon.ico"
     );
 
     private final AuthService authService;
+    private final MembershipService membershipService;
 
-    public AuthFilter(AuthService authService) {
+    public AuthFilter(AuthService authService, MembershipService membershipService) {
         this.authService = authService;
+        this.membershipService = membershipService;
     }
 
     @Override
@@ -42,9 +46,14 @@ public class AuthFilter extends OncePerRequestFilter {
         if (token != null) {
             AuthUser user = authService.validate(token);
             if (user != null) {
-                request.setAttribute("authUser", user);
-                filterChain.doFilter(request, response);
-                return;
+                var member = membershipService.resolve(user);
+                if (member.isPresent()) {
+                    request.setAttribute("authUser", user);
+                    request.setAttribute("appUser", member.get());
+                    request.setAttribute("isAdmin", member.get().getRole() == com.gamifiedjava.model.AppUser.Role.ADMIN);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
             }
         }
 

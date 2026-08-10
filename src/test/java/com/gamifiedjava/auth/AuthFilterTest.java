@@ -16,7 +16,7 @@ class AuthFilterTest {
     void setUp() {
         AuthService authService = mock(AuthService.class);
         when(authService.isConfigured()).thenReturn(true);
-        filter = new AuthFilter(authService);
+        filter = new AuthFilter(authService, mock(MembershipService.class));
     }
 
     @Test
@@ -31,5 +31,11 @@ class AuthFilterTest {
         var request = new MockHttpServletRequest("GET", "/");
 
         assertThat(filter.shouldNotFilter(request)).isFalse();
+    }
+
+    @Test
+    void invitationAcceptanceIsPublicButOpenSignupIsNot() {
+        assertThat(filter.shouldNotFilter(new MockHttpServletRequest("GET", "/auth/invite"))).isTrue();
+        assertThat(filter.shouldNotFilter(new MockHttpServletRequest("GET", "/auth/signup"))).isFalse();
     }
 }

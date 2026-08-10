@@ -5,6 +5,8 @@ import com.gamifiedjava.service.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import com.gamifiedjava.auth.AuthUser;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
@@ -48,11 +50,13 @@ public class ChallengeController {
     @PostMapping
     public String submitChallenge(@PathVariable String slug,
                                   @RequestParam("sourceCode") String sourceCode,
+                                  HttpServletRequest request,
                                   Model model) {
         CourseModule mod = moduleService.getBySlug(slug);
         if (mod == null) return "redirect:/";
 
-        ChallengeService.ChallengeResult result = challengeService.submit(mod.getId(), sourceCode);
+        AuthUser user = (AuthUser) request.getAttribute("authUser");
+        ChallengeService.ChallengeResult result = challengeService.submit(mod.getId(), sourceCode, user.id());
 
         ModuleProgress progress = moduleService.getProgress(mod.getId());
         List<ChallengeSubmission> submissions = challengeService.getSubmissions(mod.getId());
