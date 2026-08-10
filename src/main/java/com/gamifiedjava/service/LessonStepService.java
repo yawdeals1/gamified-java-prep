@@ -251,13 +251,16 @@ public class LessonStepService {
 
     // ---------------------------------------------------------------- seeding
     public void seedSteps() {
-        // Remove StepProgress records whose step no longer exists (orphans from old seeds).
-        Set<Integer> liveStepIds = stepRepository.findAll().stream()
-                .map(LessonStep::getId).collect(Collectors.toSet());
-        List<StepProgress> orphans = progressRepository.findAll().stream()
-                .filter(sp -> !liveStepIds.contains(sp.getStepId()))
-                .collect(Collectors.toList());
-        if (!orphans.isEmpty()) progressRepository.deleteAll(orphans);
+        boolean userBound = users.currentUserId().isPresent();
+        if (userBound) {
+            // Scoped progress cleanup is only valid inside an authenticated user context.
+            Set<Integer> liveStepIds = stepRepository.findAll().stream()
+                    .map(LessonStep::getId).collect(Collectors.toSet());
+            List<StepProgress> orphans = progressRepository.findAll().stream()
+                    .filter(sp -> !liveStepIds.contains(sp.getStepId()))
+                    .collect(Collectors.toList());
+            if (!orphans.isEmpty()) progressRepository.deleteAll(orphans);
+        }
 
         List<CourseModule> modules = moduleRepository.findAllByOrderByOrderIndexAsc();
         for (CourseModule m : modules) {
@@ -266,6 +269,9 @@ public class LessonStepService {
             boolean needsReseed = count == 0 || !hasConceptSteps(m) || count < 10;
             if (!needsReseed) continue;
             if (count > 0) {
+                // Startup has no authenticated tenant. Never destroy global steps (and
+                // potentially every user's progress) from that unscoped context.
+                if (!userBound) continue;
                 progressRepository.deleteAll(progressRepository.findByModuleId(m.getId()));
                 stepRepository.deleteAll(stepRepository.findByModuleIdOrderByOrderIndexAsc(m.getId()));
             }
