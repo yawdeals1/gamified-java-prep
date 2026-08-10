@@ -3,11 +3,15 @@ package com.gamifiedjava.service;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -27,12 +31,20 @@ public class CodeRunnerService {
     private static final long TIMEOUT_SECONDS = 8;
     private static final int MAX_OUTPUT_CHARS = 20_000;
     private static final int MAX_SOURCE_CHARS = 50_000;
+    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u[0-9a-fA-F]{4}");
+    private static final List<Pattern> BLOCKED_APIS = List.of(
+            Pattern.compile("\\b(?:java\\.)?(?:io|net|nio|sql|rmi)\\b"),
+            Pattern.compile("\\bjavax\\.(?:naming|script)\\b"),
+            Pattern.compile("\\b(?:Runtime|ProcessBuilder|ProcessHandle|ClassLoader|SecurityManager)\\b"),
+            Pattern.compile("\\bSystem\\s*\\.\\s*(?:exit|getenv|getProperties|getProperty|load|loadLibrary|setSecurityManager)\\s*\\("),
+            Pattern.compile("\\b(?:Class\\s*\\.\\s*forName|getClass\\s*\\(|MethodHandles?|ManagementFactory|Unsafe)\\b"),
+            Pattern.compile("\\b(?:exec|startPipeline|setAccessible)\\s*\\(")
+    );
     private final boolean executionAllowed;
 
     public CodeRunnerService(
-            @Value("${code.runner.execution-enabled:false}") boolean executionEnabled,
-            @Value("${server.address:127.0.0.1}") String bindAddress) {
-        this.executionAllowed = executionEnabled && isLoopback(bindAddress);
+            @Value("${code.runner.execution-enabled:false}") boolean executionEnabled) {
+        this.executionAllowed = executionEnabled;
     }
 
     public RunResult run(String sourceCode) {
@@ -41,6 +53,11 @@ public class CodeRunnerService {
         }
         if (sourceCode.length() > MAX_SOURCE_CHARS) {
             return new RunResult(true, false, "", "Source code too large (max " + MAX_SOURCE_CHARS + " chars).", false);
+        }
+        if (containsBlockedApi(sourceCode)) {
+            return new RunResult(false, false, "",
+                    "This runner only supports lesson-safe Java. File, network, process, environment, reflection, and native APIs are blocked.",
+                    false);
         }
 
         String className = extractClassName(sourceCode);
@@ -76,14 +93,16 @@ public class CodeRunnerService {
 
             if (!executionAllowed) {
                 return new RunResult(true, true, "",
-                        "Code compiled successfully. Execution is disabled on public deployments.", false);
+                        "Code compiled successfully. Execution is disabled by server configuration.", false);
             }
 
-            // --- run (memory-capped JVM: heap 256m, stack 16m; full-sandbox
+            // --- run (memory-capped JVM with a restricted API surface; full-sandbox
             //     isolation requires a container — see AGENTS.md) ---
             String java = findTool("java");
             ProcessResult exec = exec(workDir, java,
-                    "-Xmx256m", "-Xss16m", "-Djava.awt.headless=true", "-Dfile.encoding=UTF-8",
+                    "-Xmx128m", "-Xss2m", "-XX:MaxMetaspaceSize=64m", "-XX:ActiveProcessorCount=1",
+                    "-XX:+DisableAttachMechanism", "-Djava.awt.headless=true", "-Dfile.encoding=UTF-8",
+                    "-Djava.io.tmpdir=" + workDir.toAbsolutePath(),
                     "-cp", ".", className);
             if (exec.timedOut) {
                 return new RunResult(true, true, cap(exec.output), "Execution timed out (possible infinite loop).", true);
@@ -106,16 +125,22 @@ public class CodeRunnerService {
             pb.environment().clear();
             pb.redirectErrorStream(true);
             Process p = pb.start();
+            p.getOutputStream().close();
+            OutputCollector collector = new OutputCollector(p.getInputStream());
+            Thread outputThread = Thread.ofVirtual().start(collector);
             boolean finished = p.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
+                p.descendants().forEach(ProcessHandle::destroyForcibly);
                 p.destroyForcibly();
-                String partial = new String(p.getInputStream().readAllBytes());
-                return new ProcessResult(-1, partial, true);
+                p.waitFor(1, TimeUnit.SECONDS);
             }
-            String output = new String(p.getInputStream().readAllBytes());
-            return new ProcessResult(p.exitValue(), output, false);
-        } catch (IOException | InterruptedException e) {
+            outputThread.join(TimeUnit.SECONDS.toMillis(1));
+            return new ProcessResult(finished ? p.exitValue() : -1, collector.output(), !finished);
+        } catch (IOException e) {
             return new ProcessResult(-1, "Process error: could not start the runner.", false);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new ProcessResult(-1, "Process error: runner interrupted.", false);
         }
     }
 
@@ -142,11 +167,12 @@ public class CodeRunnerService {
         return m.find() ? m.group(1) : null;
     }
 
-    private boolean isLoopback(String address) {
-        if (address == null) return false;
-        String value = address.strip().toLowerCase();
-        return "127.0.0.1".equals(value) || "localhost".equals(value)
-                || "::1".equals(value) || "0:0:0:0:0:0:0:1".equals(value);
+    private boolean containsBlockedApi(String sourceCode) {
+        // javac expands Unicode escapes before parsing comments and strings, so inspect
+        // the original input before stripping non-executable text.
+        if (UNICODE_ESCAPE.matcher(sourceCode).find()) return true;
+        String executable = ChallengeValidator.executableText(sourceCode);
+        return BLOCKED_APIS.stream().anyMatch(pattern -> pattern.matcher(executable).find());
     }
 
     private String cap(String s) {
@@ -167,6 +193,37 @@ public class CodeRunnerService {
     }
 
     private record ProcessResult(int exitCode, String output, boolean timedOut) {}
+
+    /** Drains child output continuously while retaining only the configured cap. */
+    private static final class OutputCollector implements Runnable {
+        private final InputStream input;
+        private final ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        private boolean truncated;
+
+        private OutputCollector(InputStream input) {
+            this.input = input;
+        }
+
+        @Override
+        public void run() {
+            byte[] buffer = new byte[4096];
+            try (input) {
+                int read;
+                while ((read = input.read(buffer)) != -1) {
+                    int remaining = MAX_OUTPUT_CHARS - captured.size();
+                    if (remaining > 0) captured.write(buffer, 0, Math.min(read, remaining));
+                    if (read > remaining) truncated = true;
+                }
+            } catch (IOException ignored) {
+                // Expected when a timed-out child is killed and its stream closes.
+            }
+        }
+
+        private String output() {
+            String value = captured.toString(StandardCharsets.UTF_8);
+            return truncated ? value + "\n…(truncated)" : value;
+        }
+    }
 
     /** Result of a compile+run cycle. */
     public record RunResult(boolean compiled, boolean compileSuccess, String stdout, String stderr, boolean timedOut) {

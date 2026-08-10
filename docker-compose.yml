@@ -8,6 +8,7 @@ services:
       # App bind + port
       BIND_ADDRESS: "0.0.0.0"
       APP_PORT: "8080"
+      CODE_RUNNER_EXECUTION_ENABLED: "true"
       # Prerequisite markdown inside the image
       PREREQ_PATH: "/app/prerequisite-knowledge"
       # Deploro Auth-as-a-Service
