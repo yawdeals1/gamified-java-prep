@@ -35,7 +35,6 @@
                 <a href="/" class="hover:text-emerald-400 transition-colors">Dashboard</a>
                 <a href="/achievements" class="hover:text-emerald-400 transition-colors">Achievements</a>
                 <a href="/ai/chat" class="hover:text-emerald-400 transition-colors">AI Tutor</a>
-                <a href="/ai-api" class="hover:text-emerald-400 transition-colors inline-flex items-center gap-1"><span class="material-symbols-outlined text-sm">key</span>AI API</a>
                 <form th:if="${currentUser}" method="post" action="/auth/logout" class="inline-flex items-center gap-3">
                     <span class="text-gray-400 text-xs max-w-[9rem] truncate" th:text="${currentUser.displayName()}">user</span>
                     <button type="submit" class="text-gray-500 hover:text-red-400 transition-colors">Sign out</button>
