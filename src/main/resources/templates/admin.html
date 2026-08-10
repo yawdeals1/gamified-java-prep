@@ -25,7 +25,7 @@
     </div>
     <div th:if="${success}" class="mb-5 border border-primary/30 bg-primary/10 text-primary rounded-xl px-4 py-3 text-sm" th:text="${success}"></div>
     <div th:if="${error}" class="mb-5 border border-red-800 bg-red-950/40 text-red-300 rounded-xl px-4 py-3 text-sm" th:text="${error}"></div>
-    <div th:unless="${emailReady}" class="mb-5 border border-secondary/30 bg-secondary/10 text-secondary rounded-xl px-4 py-3 text-sm">Invitation delivery needs Cloudflare Email API credentials. The form will remain safely blocked until they are configured.</div>
+    <div th:unless="${emailReady}" class="mb-5 border border-secondary/30 bg-secondary/10 text-secondary rounded-xl px-4 py-3 text-sm">Invitation delivery is not configured. The form will remain safely blocked until an email provider is connected.</div>
 
     <section class="bg-panel-slate border border-hairline rounded-2xl p-6 mb-8">
         <h2 class="font-headline-md text-lg mb-1">Invite a member</h2><p class="text-ghost-text text-xs mb-5">They receive a 48-hour link with their email already filled in.</p>

@@ -18,20 +18,26 @@ public class CloudflareInviteEmailService {
     private final String apiToken;
     private final String fromAddress;
     private final String fromName;
+    private final String mailerUrl;
+    private final String mailerSecret;
 
     public CloudflareInviteEmailService(
             @Value("${cloudflare.email.account-id:}") String accountId,
             @Value("${cloudflare.email.api-token:}") String apiToken,
             @Value("${cloudflare.email.from-address:}") String fromAddress,
-            @Value("${cloudflare.email.from-name:JAVA_CORE}") String fromName) {
+            @Value("${cloudflare.email.from-name:JAVA_CORE}") String fromName,
+            @Value("${invite.mailer.url:}") String mailerUrl,
+            @Value("${invite.mailer.secret:}") String mailerSecret) {
         this.accountId = clean(accountId);
         this.apiToken = clean(apiToken);
         this.fromAddress = clean(fromAddress);
         this.fromName = clean(fromName);
+        this.mailerUrl = clean(mailerUrl);
+        this.mailerSecret = clean(mailerSecret);
     }
 
     public boolean isConfigured() {
-        return !accountId.isBlank() && !apiToken.isBlank() && !fromAddress.isBlank();
+        return gatewayConfigured() || restApiConfigured();
     }
 
     public void sendInvite(String email, String inviteUrl) {
@@ -46,6 +52,17 @@ public class CloudflareInviteEmailService {
                 "\" style=\"display:inline-block;background:#4edea3;color:#07110d;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700\">Create member account</a></p>" +
                 "<p style=\"color:#66736e;font-size:13px\">Your email is already filled in. Add your name and password to finish. This link expires in 48 hours.</p></div>");
 
+        if (gatewayConfigured()) {
+            client.post()
+                    .uri(URI.create(mailerUrl))
+                    .header("X-Mailer-Secret", mailerSecret)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .toBodilessEntity();
+            return;
+        }
+
         body.put("from", Map.of("address", fromAddress, "name", fromName));
         client.post()
                 .uri(URI.create("https://api.cloudflare.com/client/v4/accounts/" + accountId + "/email/sending/send"))
@@ -54,6 +71,14 @@ public class CloudflareInviteEmailService {
                 .body(body)
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    private boolean gatewayConfigured() {
+        return !mailerUrl.isBlank() && !mailerSecret.isBlank();
+    }
+
+    private boolean restApiConfigured() {
+        return !accountId.isBlank() && !apiToken.isBlank() && !fromAddress.isBlank();
     }
 
     private static String clean(String value) { return value == null ? "" : value.trim(); }

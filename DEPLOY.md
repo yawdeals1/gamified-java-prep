@@ -16,6 +16,9 @@ The image reads everything from env vars. No database credentials, no config fil
 | `OLLAMA_API_KEY` | no | Bearer key for cloud gateways only |
 | `OLLAMA_MODEL` | no | Default `gemma4:31b-cloud` |
 | `OLLAMA_PROTOCOL` | no | `ollama` (default) or `openai` |
+| `INVITE_MAILER_URL` | yes for invitations | Secret-protected Cloudflare email helper `/send` URL |
+| `INVITE_MAILER_SECRET` | yes for invitations | Shared secret stored in both Wrangler and Deploro |
+| `INVITE_FROM_EMAIL` | yes for invitations | Verified sender address (currently `invite@deploro.com`) |
 | `BIND_ADDRESS` | no | Default `127.0.0.1`; must be `0.0.0.0` in Docker |
 | `JAVA_OPTS` | no | e.g. `-Xmx1g` |
 
