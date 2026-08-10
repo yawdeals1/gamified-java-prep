@@ -1,5 +1,6 @@
 package com.gamifiedjava.service;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.*;
 import com.gamifiedjava.repository.*;
 import org.springframework.stereotype.Service;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GamificationService {
@@ -15,60 +17,68 @@ public class GamificationService {
     private final XpLogRepository xpLogRepository;
     private final AchievementRepository achievementRepository;
     private final ModuleProgressRepository progressRepository;
+    private final CurrentUserContext users;
+    private final ConcurrentHashMap<String, Object> userLocks = new ConcurrentHashMap<>();
 
     public GamificationService(AppStateRepository appStateRepository,
                                XpLogRepository xpLogRepository,
                                AchievementRepository achievementRepository,
-                               ModuleProgressRepository progressRepository) {
+                               ModuleProgressRepository progressRepository,
+                               CurrentUserContext users) {
         this.appStateRepository = appStateRepository;
         this.xpLogRepository = xpLogRepository;
         this.achievementRepository = achievementRepository;
         this.progressRepository = progressRepository;
+        this.users = users;
     }
 
     public AppState getState() {
-        return appStateRepository.findById(1).orElseGet(() -> {
-            AppState s = new AppState();
-            return appStateRepository.save(s);
-        });
+        return appStateRepository.getOrCreate();
     }
     public AppState addXp(String action, int amount, String note) {
-        AppState state = getState();
-        state.setTotalXp(state.getTotalXp() + amount);
-        state.setCurrentLevel(calculateLevel(state.getTotalXp()));
-        state.setUpdatedAt(LocalDateTime.now());
-        appStateRepository.save(state);
-
-        XpLog log = new XpLog(action, amount, note);
-        xpLogRepository.save(log);
-
-        checkAchievements(state);
-        return state;
+        if (amount < 0 || amount > 1_000) throw new IllegalArgumentException("Invalid XP amount.");
+        synchronized (userLock()) {
+            AppState state = getState();
+            state.setTotalXp(state.getTotalXp() + amount);
+            state.setCurrentLevel(calculateLevel(state.getTotalXp()));
+            state.setUpdatedAt(LocalDateTime.now());
+            appStateRepository.save(state);
+            xpLogRepository.save(new XpLog(action, amount, note));
+            checkAchievements(state);
+            return state;
+        }
     }
     public AppState checkStreak() {
-        AppState state = getState();
-        LocalDate today = LocalDate.now();
+        synchronized (userLock()) {
+            AppState state = getState();
+            LocalDate today = LocalDate.now();
 
         // A dashboard view is a read for the rest of the day. Avoid a remote
         // PATCH on every navigation once today's streak has already been set.
-        if (today.equals(state.getLastActiveDate())) return state;
+            if (today.equals(state.getLastActiveDate())) return state;
 
-        if (state.getLastActiveDate() != null) {
-            LocalDate yesterday = today.minusDays(1);
-            if (state.getLastActiveDate().equals(yesterday)) {
-                state.setStreakCount(state.getStreakCount() + 1);
-                addXp("streak_day", 10 * state.getStreakCount(), "Day " + state.getStreakCount() + " streak bonus");
-            } else if (!state.getLastActiveDate().equals(today)) {
+            if (state.getLastActiveDate() != null) {
+                LocalDate yesterday = today.minusDays(1);
+                if (state.getLastActiveDate().equals(yesterday)) {
+                    state.setStreakCount(state.getStreakCount() + 1);
+                    int bonus = 10 * state.getStreakCount();
+                    state.setTotalXp(state.getTotalXp() + bonus);
+                    state.setCurrentLevel(calculateLevel(state.getTotalXp()));
+                    xpLogRepository.save(new XpLog("streak_day", bonus,
+                            "Day " + state.getStreakCount() + " streak bonus"));
+                } else {
+                    state.setStreakCount(1);
+                }
+            } else {
                 state.setStreakCount(1);
             }
-        } else {
-            state.setStreakCount(1);
-        }
 
-        state.setLastActiveDate(today);
-        state.setUpdatedAt(LocalDateTime.now());
-        appStateRepository.save(state);
-        return state;
+            state.setLastActiveDate(today);
+            state.setUpdatedAt(LocalDateTime.now());
+            appStateRepository.save(state);
+            checkAchievements(state);
+            return state;
+        }
     }
 
     private int calculateLevel(int xp) {
@@ -80,9 +90,11 @@ public class GamificationService {
     }
 
     public List<Achievement> getAchievements() {
+        seedAchievements();
         return achievementRepository.findAllByOrderByUnlockedAtAsc();
     }
     public void seedAchievements() {
+        if (users.currentUserId().isEmpty()) return;
         if (achievementRepository.count() == 0) {
             achievementRepository.save(new Achievement("First Steps", "Complete your first module", "footprints"));
             achievementRepository.save(new Achievement("Knowledge Seeker", "Pass all quizzes with >=80%", "book"));
@@ -101,6 +113,7 @@ public class GamificationService {
     }
 
     private void checkAchievements(AppState state) {
+        seedAchievements();
         long unlockedCount = achievementRepository.countByUnlockedAtIsNotNull();
 
         if (unlockedCount >= achievementRepository.count()) return;
@@ -127,5 +140,9 @@ public class GamificationService {
                 achievementRepository.save(a);
             }
         });
+    }
+
+    private Object userLock() {
+        return userLocks.computeIfAbsent(users.requireUserId(), ignored -> new Object());
     }
 }

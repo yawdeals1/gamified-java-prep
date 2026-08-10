@@ -1,5 +1,10 @@
 // Auto-dismiss flash messages
 document.addEventListener('DOMContentLoaded', function() {
+    if (!window.javaCoreActivityRecorded) {
+        window.javaCoreActivityRecorded = true;
+        fetch('/api/activity', { method: 'POST', headers: { 'Accept': 'application/json' } })
+            .catch(function() { /* activity tracking must never block the page */ });
+    }
     const flashes = document.querySelectorAll('.flash-message');
     flashes.forEach(function(flash) {
         setTimeout(function() {

@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.model.ModuleProgress;
 import com.gamifiedjava.studio.StudioClient;
@@ -18,10 +19,13 @@ public class ModuleProgressRepository extends StudioRepository<ModuleProgress> {
 
     private final ModuleRepository moduleRepository;
 
-    public ModuleProgressRepository(StudioClient client, ModuleRepository moduleRepository) {
-        super(client, "module_progress");
+    public ModuleProgressRepository(StudioClient client, ModuleRepository moduleRepository,
+                                    CurrentUserContext users) {
+        super(client, "module_progress", users);
         this.moduleRepository = moduleRepository;
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(ModuleProgress p) {

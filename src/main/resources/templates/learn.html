@@ -10,7 +10,7 @@
 
 <script defer src="/js/vendor/alpine.min.js"></script>
 <script src="/js/vendor/marked.min.js"></script>
-<script src="/js/vendor/purify.min.js"></script>
+<script src="/webjars/dompurify/3.2.7/dist/purify.min.js"></script>
 <style>
   /* Markdown prose - dark cockpit theme */
   .md-body h1,.md-body h2,.md-body h3 { color:#EAF2EF; font-family:Geist,sans-serif; font-weight:600; margin:.7em 0 .35em; }
@@ -290,8 +290,8 @@
           ALLOWED_ATTR: []
         });
       }
-      return raw;
-    } catch (e) { return text; }
+      return text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    } catch (e) { return text.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   }
 
   function lessonPlayer() {

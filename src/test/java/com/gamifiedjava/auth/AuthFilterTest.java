@@ -16,7 +16,7 @@ class AuthFilterTest {
     void setUp() {
         AuthService authService = mock(AuthService.class);
         when(authService.isConfigured()).thenReturn(true);
-        filter = new AuthFilter(authService, mock(MembershipService.class));
+        filter = new AuthFilter(authService, mock(MembershipService.class), new CurrentUserContext());
     }
 
     @Test

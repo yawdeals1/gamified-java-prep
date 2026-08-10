@@ -1,6 +1,9 @@
 package com.gamifiedjava.service;
 
+import com.gamifiedjava.model.AiChat;
+import com.gamifiedjava.model.AiConversation;
 import com.gamifiedjava.repository.AiConversationRepository;
+import com.gamifiedjava.repository.AiChatRepository;
 import com.gamifiedjava.repository.ModuleRepository;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -11,6 +14,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -67,6 +71,54 @@ class OllamaServiceTest {
     }
 
     @Test
+    void sendsThreadHistoryAndPersistsMessagesInTheOwnedChat() throws Exception {
+        AtomicReference<String> requestBody = new AtomicReference<>();
+        server = server("/api/generate", exchange -> {
+            requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            respond(exchange, 200, "{\"response\":\"Autoboxing converts it automatically.\"}");
+        });
+        AiChatRepository chats = mock(AiChatRepository.class);
+        AiConversationRepository messages = mock(AiConversationRepository.class);
+        UserAiSettingsService settings = mock(UserAiSettingsService.class);
+        when(settings.apiKey("user-1")).thenReturn(Optional.of("valid-key"));
+
+        AiChat chat = new AiChat();
+        chat.setId(7);
+        chat.setAuthUserId("user-1");
+        chat.setTitle("New chat");
+        AiConversation previous = new AiConversation();
+        previous.setRole("user");
+        previous.setMessage("What is boxing?");
+        when(chats.findById(7)).thenReturn(Optional.of(chat));
+        when(messages.findByChatIdOrderByCreatedAtAsc(7)).thenReturn(List.of(previous));
+
+        OllamaService service = service(chats, messages, settings);
+        service.ask("And autoboxing?", null, "ask", "user-1", 7);
+
+        assertTrue(requestBody.get().contains("What is boxing?"));
+        assertTrue(requestBody.get().contains("And autoboxing?"));
+        assertEquals("And autoboxing?", chat.getTitle());
+        verify(chats).save(chat);
+        var saved = org.mockito.ArgumentCaptor.forClass(AiConversation.class);
+        verify(messages, times(2)).save(saved.capture());
+        assertTrue(saved.getAllValues().stream().allMatch(message -> Integer.valueOf(7).equals(message.getChatId())));
+        assertTrue(saved.getAllValues().stream().allMatch(message -> "user-1".equals(message.getAuthUserId())));
+    }
+
+    @Test
+    void refusesToOpenAnotherUsersChat() {
+        AiChatRepository chats = mock(AiChatRepository.class);
+        AiChat chat = new AiChat();
+        chat.setId(9);
+        chat.setAuthUserId("someone-else");
+        when(chats.findById(9)).thenReturn(Optional.of(chat));
+        OllamaService service = service(chats, mock(AiConversationRepository.class), mock(UserAiSettingsService.class));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.ask("Hello", null, "ask", "user-1", 9));
+    }
+
+    @Test
     void explainsProviderErrorsAccurately() {
         assertTrue(OllamaService.responseError(401).contains("API key"));
         assertTrue(OllamaService.responseError(404).contains("model"));
@@ -79,13 +131,21 @@ class OllamaServiceTest {
     }
 
     private OllamaService service(UserAiSettingsService settings) {
+        return service(mock(AiChatRepository.class), mock(AiConversationRepository.class), settings);
+    }
+
+    private OllamaService service(AiChatRepository chats,
+                                  AiConversationRepository messages,
+                                  UserAiSettingsService settings) {
         OllamaService service = new OllamaService(
-                mock(AiConversationRepository.class),
+                chats,
+                messages,
                 mock(ModuleRepository.class),
                 mock(GamificationService.class),
                 settings
         );
-        ReflectionTestUtils.setField(service, "baseUrl", "http://127.0.0.1:" + server.getAddress().getPort());
+        String testBaseUrl = server == null ? "http://127.0.0.1:1" : "http://127.0.0.1:" + server.getAddress().getPort();
+        ReflectionTestUtils.setField(service, "baseUrl", testBaseUrl);
         ReflectionTestUtils.setField(service, "model", "gemma4:31b");
         ReflectionTestUtils.setField(service, "protocol", "ollama");
         return service;

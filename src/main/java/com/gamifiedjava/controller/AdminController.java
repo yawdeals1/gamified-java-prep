@@ -15,10 +15,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.regex.Pattern;
 
 @Controller
+@Validated
 @RequestMapping("/admin")
 public class AdminController {
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
@@ -45,7 +49,8 @@ public class AdminController {
     }
 
     @PostMapping("/invite")
-    public String invite(@RequestParam String email, HttpServletRequest request, RedirectAttributes flash) {
+    public String invite(@RequestParam @Size(max = 320) String email,
+                         HttpServletRequest request, RedirectAttributes flash) {
         String clean = MembershipService.normalize(email);
         if (!EMAIL.matcher(clean).matches()) {
             flash.addFlashAttribute("error", "Enter a valid email address.");
@@ -62,7 +67,8 @@ public class AdminController {
     }
 
     @PostMapping("/members/{id}/remove")
-    public String remove(@PathVariable Integer id, HttpServletRequest request, RedirectAttributes flash) {
+    public String remove(@PathVariable @Positive Integer id,
+                         HttpServletRequest request, RedirectAttributes flash) {
         AuthUser admin = (AuthUser) request.getAttribute("authUser");
         AppUser member = memberships.findById(id).orElse(null);
         if (member == null || !member.isActive()) {
@@ -80,7 +86,6 @@ public class AdminController {
     }
 
     private String safeMessage(Exception e) {
-        if (e instanceof IllegalArgumentException || e instanceof IllegalStateException) return e.getMessage();
         return "The invitation could not be sent. Check the email service configuration.";
     }
 }

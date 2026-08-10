@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.StepProgress;
 import com.gamifiedjava.studio.StudioClient;
 import com.gamifiedjava.studio.StudioRepository;
@@ -15,9 +16,11 @@ import java.util.Optional;
 @Repository
 public class StepProgressRepository extends StudioRepository<StepProgress> {
 
-    public StepProgressRepository(StudioClient client) {
-        super(client, "step_progress");
+    public StepProgressRepository(StudioClient client, CurrentUserContext users) {
+        super(client, "step_progress", users);
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(StepProgress p) {

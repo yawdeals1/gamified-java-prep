@@ -29,6 +29,10 @@ public class QuizService {
     }
     public QuizResult submitAnswers(Integer moduleId, Map<Integer, Integer> answers) {
         List<QuizQuestion> questions = questionRepository.findByModuleId(moduleId);
+        ModuleProgress current = progressRepository.findByModuleId(moduleId).orElse(null);
+        if (current == null || !Set.of("quiz_ready", "challenge_ready", "completed").contains(current.getStatus())) {
+            return new QuizResult(0, 0, questions.size(), List.of());
+        }
         int correct = 0;
         int total = questions.size();
 
@@ -50,7 +54,7 @@ public class QuizService {
 
         int percentage = total > 0 ? (correct * 100) / total : 0;
 
-        ModuleProgress prog = progressRepository.findByModuleId(moduleId).orElse(null);
+        ModuleProgress prog = current;
         if (prog != null) {
             boolean firstAttempt = prog.getQuizAttempts() == 0; // XP once per module, not per re-submit
             prog.setQuizScore(Math.max(prog.getQuizScore(), percentage));

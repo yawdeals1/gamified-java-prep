@@ -31,7 +31,6 @@ public class ModuleService {
     }
     public void seedModules() {
         if (moduleRepository.count() > 0) {
-            ensureProgressRows();
             return;
         }
 
@@ -54,8 +53,6 @@ public class ModuleService {
             m.setChallengeTemplateCode(getChallengeTemplate(i + 1));
             moduleRepository.save(m);
 
-            ModuleProgress prog = new ModuleProgress(m);
-            progressRepository.save(prog);
         }
     }
 
@@ -76,7 +73,7 @@ public class ModuleService {
             }
             return "# " + filename.replace(".md", "").replace("-", " ").substring(3) + "\n\nContent not found at: " + mdPath;
         } catch (IOException e) {
-            return "# Error\n\nCould not load content: " + e.getMessage();
+            return "# Error\n\nCould not load prerequisite content.";
         }
     }
 
@@ -85,6 +82,7 @@ public class ModuleService {
     }
 
     public List<ModuleProgress> getAllProgress() {
+        ensureProgressRows();
         return progressRepository.findAllByOrderByIdAsc();
     }
 
@@ -93,7 +91,10 @@ public class ModuleService {
     }
 
     public ModuleProgress getProgress(Integer moduleId) {
-        return progressRepository.findByModuleId(moduleId).orElse(null);
+        return progressRepository.findByModuleId(moduleId)
+                .orElseGet(() -> moduleRepository.findById(moduleId)
+                        .map(module -> progressRepository.save(new ModuleProgress(module)))
+                        .orElse(null));
     }
     public void unlockNextModule(Integer currentModuleId) {
         CourseModule current = moduleRepository.findById(currentModuleId).orElse(null);
@@ -121,7 +122,7 @@ public class ModuleService {
     }
     public ModuleProgress markModuleComplete(Integer moduleId) {
         ModuleProgress prog = getProgress(moduleId);
-        if (prog != null) {
+        if (prog != null && Boolean.TRUE.equals(prog.getChallengePassed())) {
             prog.setStatus("completed");
             prog.setCompletedAt(java.time.LocalDateTime.now());
             prog.setUpdatedAt(java.time.LocalDateTime.now());

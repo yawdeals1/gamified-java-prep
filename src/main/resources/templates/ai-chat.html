@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
     <script src="/js/vendor/marked.min.js"></script>
-    <script src="/js/vendor/purify.min.js"></script>
+    <script src="/webjars/dompurify/3.2.7/dist/purify.min.js"></script>
     
     <style>
         body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
@@ -30,6 +30,15 @@
         .md-bubble th { background:rgba(78,222,163,.1); color:#4edea3; padding:.35em .6em; border:1px solid rgba(148,163,161,.14); text-align:left; }
         .md-bubble td { padding:.3em .6em; border:1px solid rgba(148,163,161,.14); }
         .md-bubble blockquote { border-left:2px solid #4edea3; padding-left:.75em; color:#8A9895; margin:.4em 0; font-style:italic; }
+        .chat-row-active { background:rgba(78,222,163,.10); color:#EAF2EF; border-color:rgba(78,222,163,.22) !important; }
+        #chat-sidebar { width:18rem; }
+        .chat-row { border-color:transparent; }
+        .chat-row + .chat-row { margin-top:.25rem; }
+        .chat-mobile-action { display:flex; }
+        @media (min-width: 768px) { .chat-mobile-action { display:none; } }
+        @media (max-width: 767px) {
+            #chat-sidebar.chat-sidebar-open { display:flex !important; position:fixed; inset:56px auto 0 0; z-index:40; width:min(88vw,320px); box-shadow:20px 0 50px rgba(0,0,0,.45); }
+        }
     </style>
 </head>
 <body class="font-body-md h-screen flex flex-col">
@@ -55,13 +64,55 @@
 </header>
 
 <!-- Chat area -->
-<main class="flex-1 flex flex-col overflow-hidden">
+<main class="flex-1 flex overflow-hidden">
+
+    <!-- Conversation history -->
+    <aside id="chat-sidebar" class="hidden md:flex w-72 shrink-0 flex-col bg-cockpit-base border-r border-hairline">
+        <div class="p-3 border-b border-hairline">
+            <button type="button" onclick="newChat()"
+                    class="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:brightness-110 active:scale-[.99] transition-all">
+                <span class="material-symbols-outlined text-lg">add</span>
+                New chat
+            </button>
+        </div>
+        <div class="px-4 pt-4 pb-2 font-label-sm text-[10px] uppercase tracking-[.16em] text-ghost-text">Your chats</div>
+        <div id="chat-list" class="flex-1 overflow-y-auto custom-scrollbar px-2 pb-3 space-y-1">
+            <button th:each="chat : ${chats}" type="button"
+                    th:attr="data-chat-id=${chat.id},onclick=|selectChat(${chat.id})|"
+                    th:classappend="${activeChat != null and chat.id == activeChat.id} ? ' chat-row-active' : ''"
+                    class="chat-row w-full text-left rounded-lg border border-transparent px-3 py-2.5 hover:bg-surface-container-high transition-colors group">
+                <span class="chat-row-title block truncate text-sm text-on-surface-variant group-hover:text-on-surface"
+                      th:text="${chat.title}">Chat title</span>
+                <span class="block mt-1 text-[10px] text-ghost-text"
+                      th:text="${#temporals.format(chat.updatedAt, 'MMM d, HH:mm')}">Today</span>
+            </button>
+            <p id="no-chats" th:classappend="${!chats.isEmpty()} ? ' hidden' : ''"
+               class="px-3 py-5 text-xs text-ghost-text leading-relaxed">Start a chat to build a private, resumable conversation with your Java tutor.</p>
+        </div>
+    </aside>
+
+    <section class="flex-1 min-w-0 flex flex-col overflow-hidden">
+    <div class="flex-none h-12 px-4 flex items-center gap-3 border-b border-hairline bg-cockpit-base/60">
+        <button type="button" onclick="toggleSidebar()" aria-label="Open chat history"
+                class="chat-mobile-action w-8 h-8 rounded-lg border border-hairline text-ghost-text items-center justify-center">
+            <span class="material-symbols-outlined text-lg">menu</span>
+        </button>
+        <div class="min-w-0">
+            <div id="active-chat-title" class="truncate text-sm font-medium text-on-surface"
+                 th:text="${activeChat != null ? activeChat.title : 'New chat'}">New chat</div>
+            <div class="text-[10px] text-ghost-text">Conversation memory on</div>
+        </div>
+        <button type="button" onclick="newChat()" aria-label="New chat"
+                class="chat-mobile-action ml-auto w-8 h-8 rounded-lg border border-hairline text-primary items-center justify-center">
+            <span class="material-symbols-outlined text-lg">add</span>
+        </button>
+    </div>
 
     <!-- Messages -->
     <div id="chat-messages" class="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 space-y-4">
 
         <!-- Greeting -->
-        <div class="flex justify-start">
+        <div id="chat-greeting" class="flex justify-start">
             <div class="max-w-[75%] bg-surface-container-high rounded-2xl rounded-tl-none px-5 py-3 text-sm text-on-surface-variant border border-hairline/10 leading-relaxed">
                 Ask me anything about Java - concepts, debugging, Spring Boot, anything. I'll explain without giving away answers to your challenges.
             </div>
@@ -69,7 +120,7 @@
 
         <!-- History from server -->
         <div th:each="msg : ${history}"
-             class="flex msg-enter"
+             class="chat-message flex msg-enter"
              th:classappend="${msg.role == 'user'} ? 'justify-end' : 'justify-start'">
             <div class="max-w-[75%] rounded-2xl px-5 py-3 text-sm leading-relaxed border"
                  th:classappend="${msg.role == 'user'}
@@ -129,11 +180,14 @@
             </button>
         </form>
     </div>
+    </section>
 </main>
 
-<script>
+<script th:inline="javascript">
     const chatMessages = document.getElementById('chat-messages');
     const loadingEl = document.getElementById('loading-indicator');
+    let activeChatId = /*[[${activeChat != null ? activeChat.id : null}]]*/ null;
+    let isSending = false;
 
     function mdParse(text) {
         if (typeof marked !== 'undefined') {
@@ -148,7 +202,7 @@
                         ALLOWED_ATTR: []
                     });
                 }
-                return raw;
+                return text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
             } catch (e) {}
         }
         return text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
@@ -169,7 +223,7 @@
 
     function addMessage(role, text) {
         const wrap = document.createElement('div');
-        wrap.className = 'flex msg-enter ' + (role === 'user' ? 'justify-end' : 'justify-start');
+        wrap.className = 'chat-message flex msg-enter ' + (role === 'user' ? 'justify-end' : 'justify-start');
         const bubble = document.createElement('div');
         bubble.className = 'max-w-[75%] rounded-2xl px-5 py-3 text-sm leading-relaxed border '
             + (role === 'user'
@@ -191,26 +245,127 @@
         if (show) scrollBottom();
     }
 
-    function sendMessage(event) {
+    function toggleSidebar(forceClose) {
+        const sidebar = document.getElementById('chat-sidebar');
+        if (forceClose === true) sidebar.classList.remove('chat-sidebar-open');
+        else sidebar.classList.toggle('chat-sidebar-open');
+    }
+
+    function clearMessages() {
+        document.querySelectorAll('.chat-message').forEach(el => el.remove());
+        setLoading(false);
+        scrollBottom();
+    }
+
+    function setActiveChat(id, title) {
+        activeChatId = id;
+        document.getElementById('active-chat-title').textContent = title || 'New chat';
+        document.querySelectorAll('.chat-row').forEach(row => {
+            row.classList.toggle('chat-row-active', Number(row.dataset.chatId) === Number(id));
+        });
+    }
+
+    function upsertChatRow(chat, prepend) {
+        const list = document.getElementById('chat-list');
+        let row = list.querySelector(`[data-chat-id="${chat.id}"]`);
+        if (!row) {
+            row = document.createElement('button');
+            row.type = 'button';
+            row.dataset.chatId = chat.id;
+            row.className = 'chat-row w-full text-left rounded-lg border border-transparent px-3 py-2.5 hover:bg-surface-container-high transition-colors group';
+            row.onclick = () => selectChat(chat.id);
+            row.innerHTML = '<span class="chat-row-title block truncate text-sm text-on-surface-variant group-hover:text-on-surface"></span>'
+                + '<span class="block mt-1 text-[10px] text-ghost-text">Just now</span>';
+            if (prepend) list.prepend(row); else list.appendChild(row);
+        }
+        row.querySelector('.chat-row-title').textContent = chat.title || 'New chat';
+        document.getElementById('no-chats').classList.add('hidden');
+        return row;
+    }
+
+    async function newChat(focusInput = true) {
+        try {
+            const response = await fetch('/ai/chats', { method: 'POST' });
+            if (!response.ok) throw new Error('Could not create chat');
+            const chat = await response.json();
+            upsertChatRow(chat, true);
+            setActiveChat(chat.id, chat.title);
+            clearMessages();
+            toggleSidebar(true);
+            if (focusInput) document.getElementById('chat-input').focus();
+            return chat;
+        } catch (error) {
+            addMessage('assistant', 'I could not start a new chat. Please try again.');
+            return null;
+        }
+    }
+
+    async function selectChat(chatId) {
+        if (isSending || Number(chatId) === Number(activeChatId)) {
+            toggleSidebar(true);
+            return;
+        }
+        const row = document.querySelector(`[data-chat-id="${chatId}"]`);
+        const title = row?.querySelector('.chat-row-title')?.textContent || 'Chat';
+        setActiveChat(chatId, title);
+        clearMessages();
+        setLoading(true);
+        toggleSidebar(true);
+        try {
+            const response = await fetch(`/ai/chats/${chatId}/messages`);
+            if (!response.ok) throw new Error('Could not load chat');
+            const messages = await response.json();
+            setLoading(false);
+            messages.forEach(message => addMessage(message.role, message.message));
+        } catch (error) {
+            setLoading(false);
+            addMessage('assistant', 'I could not load that conversation. Please refresh and try again.');
+        }
+    }
+
+    async function sendMessage(event) {
         event.preventDefault();
+        if (isSending) return;
         const input = document.getElementById('chat-input');
         const message = input.value.trim();
         if (!message) return;
+        if (activeChatId == null) {
+            const chat = await newChat(false);
+            if (!chat) return;
+        }
+        const requestChatId = activeChatId;
         input.value = '';
         input.style.height = 'auto';
         addMessage('user', message);
         setLoading(true);
+        isSending = true;
         const params = new URLSearchParams();
         params.append('message', message);
         params.append('context', 'ask');
-        fetch('/ai/ask', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params
-        })
-        .then(r => r.json())
-        .then(d => { setLoading(false); addMessage('assistant', d.response || 'No response.'); })
-        .catch(() => { setLoading(false); addMessage('assistant', 'Error - is Ollama running at localhost:11434?'); });
+        params.append('chatId', requestChatId);
+        try {
+            const response = await fetch('/ai/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+            if (!response.ok) throw new Error('Request failed');
+            const data = await response.json();
+            setLoading(false);
+            if (Number(activeChatId) === Number(requestChatId)) {
+                addMessage('assistant', data.response || 'No response.');
+                if (data.chatTitle) {
+                    upsertChatRow({ id: requestChatId, title: data.chatTitle }, false);
+                    setActiveChat(requestChatId, data.chatTitle);
+                }
+            }
+        } catch (error) {
+            setLoading(false);
+            addMessage('assistant', 'I could not reach the AI tutor. Please try again.');
+        } finally {
+            isSending = false;
+            input.focus();
+        }
     }
 
     function quickAsk(question) {

@@ -7,10 +7,14 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.gamifiedjava.auth.AuthUser;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
 @Controller
+@Validated
 @RequestMapping("/module/{slug}/challenge")
 public class ChallengeController {
 
@@ -32,7 +36,7 @@ public class ChallengeController {
         if (mod == null) return "redirect:/";
 
         ModuleProgress progress = moduleService.getProgress(mod.getId());
-        if (progress == null || !progress.isUnlocked()) {
+        if (!challengeAllowed(progress)) {
             return "redirect:/module/" + slug;
         }
 
@@ -49,11 +53,13 @@ public class ChallengeController {
 
     @PostMapping
     public String submitChallenge(@PathVariable String slug,
-                                  @RequestParam("sourceCode") String sourceCode,
+                                  @RequestParam("sourceCode") @NotBlank @Size(max = 50_000) String sourceCode,
                                   HttpServletRequest request,
                                   Model model) {
         CourseModule mod = moduleService.getBySlug(slug);
         if (mod == null) return "redirect:/";
+        ModuleProgress existingProgress = moduleService.getProgress(mod.getId());
+        if (!challengeAllowed(existingProgress)) return "redirect:/module/" + slug;
 
         AuthUser user = (AuthUser) request.getAttribute("authUser");
         ChallengeService.ChallengeResult result = challengeService.submit(mod.getId(), sourceCode, user.id());
@@ -74,5 +80,10 @@ public class ChallengeController {
         model.addAttribute("content", "challenge-result :: content");
 
         return "challenge-result";
+    }
+
+    private boolean challengeAllowed(ModuleProgress progress) {
+        return progress != null && ("challenge_ready".equals(progress.getStatus())
+                || "completed".equals(progress.getStatus()));
     }
 }

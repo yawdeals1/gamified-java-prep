@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.ChallengeSubmission;
 import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.studio.StudioClient;
@@ -17,10 +18,13 @@ public class ChallengeSubmissionRepository extends StudioRepository<ChallengeSub
 
     private final ModuleRepository moduleRepository;
 
-    public ChallengeSubmissionRepository(StudioClient client, ModuleRepository moduleRepository) {
-        super(client, "challenge_submission");
+    public ChallengeSubmissionRepository(StudioClient client, ModuleRepository moduleRepository,
+                                         CurrentUserContext users) {
+        super(client, "challenge_submission", users);
         this.moduleRepository = moduleRepository;
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(ChallengeSubmission s) {

@@ -6,6 +6,10 @@ public class AiConversation {
 
     private Integer id;
 
+    private Integer chatId;
+
+    private String authUserId;
+
     private String role;
 
     private String message;
@@ -20,6 +24,10 @@ public class AiConversation {
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
+    public Integer getChatId() { return chatId; }
+    public void setChatId(Integer chatId) { this.chatId = chatId; }
+    public String getAuthUserId() { return authUserId; }
+    public void setAuthUserId(String authUserId) { this.authUserId = authUserId; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
     public String getMessage() { return message; }

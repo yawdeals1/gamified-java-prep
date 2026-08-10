@@ -1,19 +1,19 @@
 package com.gamifiedjava.controller;
 
 import com.gamifiedjava.config.RateLimiter;
+import com.gamifiedjava.auth.AuthUser;
 import com.gamifiedjava.model.QuizQuestion;
 import com.gamifiedjava.repository.QuizQuestionRepository;
 import com.gamifiedjava.service.CodeRunnerService;
 import com.gamifiedjava.service.GamificationService;
 import com.gamifiedjava.service.LessonStepService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 
 /** JSON API backing the Lesson Player: run code + check a step. XP is awarded server-side. */
 @Validated
@@ -44,15 +44,15 @@ public class LessonApiController {
 
     /** Compile + run arbitrary Java; returns compile status, stdout, stderr. */
     @PostMapping("/run")
-    public Object run(@Valid @RequestBody RunRequest req) {
-        if (!rateLimiter.tryAcquire()) {
+    public Object run(@Valid @RequestBody RunRequest req, HttpServletRequest request) {
+        AuthUser user = (AuthUser) request.getAttribute("authUser");
+        RateLimiter.Lease lease = rateLimiter.tryAcquire("code", user.id());
+        if (lease == null) {
             return Map.of("compiled", false, "compileSuccess", false,
                     "stdout", "", "stderr", "Too many requests — try again shortly.", "timedOut", false);
         }
-        try {
+        try (lease) {
             return codeRunner.run(req.sourceCode());
-        } finally {
-            rateLimiter.release();
         }
     }
 
@@ -86,9 +86,10 @@ public class LessonApiController {
         );
     }
 
-    public record RunRequest(@NotNull @Size(max = MAX_CODE_CHARS) String sourceCode) {}
-    public record CheckRequest(Integer selectedIndex,
+    public record RunRequest(@NotBlank @Size(max = MAX_CODE_CHARS) String sourceCode) {}
+    public record CheckRequest(@Min(0) @Max(20) Integer selectedIndex,
                                @Size(max = MAX_ANSWER_CHARS) String answer,
                                @Size(max = MAX_CODE_CHARS) String code) {}
-    public record QuizCheckRequest(@NotNull @Positive Integer questionId, Integer selectedIndex) {}
+    public record QuizCheckRequest(@NotNull @Positive Integer questionId,
+                                   @Min(0) @Max(20) Integer selectedIndex) {}
 }

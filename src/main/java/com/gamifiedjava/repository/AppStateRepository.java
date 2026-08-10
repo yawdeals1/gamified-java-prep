@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.AppState;
 import com.gamifiedjava.studio.StudioClient;
 import com.gamifiedjava.studio.StudioRepository;
@@ -14,9 +15,11 @@ import java.util.Map;
 @Repository
 public class AppStateRepository extends StudioRepository<AppState> {
 
-    public AppStateRepository(StudioClient client) {
-        super(client, "app_state");
+    public AppStateRepository(StudioClient client, CurrentUserContext users) {
+        super(client, "app_state", users);
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(AppState s) {
@@ -54,10 +57,6 @@ public class AppStateRepository extends StudioRepository<AppState> {
     }
 
     public AppState getOrCreate() {
-        return findById(1).orElseGet(() -> {
-            AppState s = new AppState();
-            s.setId(1);
-            return save(s);
-        });
+        return findAll().stream().findFirst().orElseGet(() -> save(new AppState()));
     }
 }

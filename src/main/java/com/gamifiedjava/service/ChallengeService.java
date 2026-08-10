@@ -7,6 +7,7 @@ import com.gamifiedjava.repository.ChallengeSubmissionRepository;
 import com.gamifiedjava.repository.ModuleProgressRepository;
 import com.gamifiedjava.repository.ModuleRepository;
 import org.springframework.stereotype.Service;
+import com.gamifiedjava.config.RateLimiter;
 
 import java.io.*;
 import java.nio.file.*;
@@ -23,6 +24,8 @@ public class ChallengeService {
     private final ModuleProgressRepository progressRepository;
     private final OllamaService ollamaService;
     private final GamificationService gamificationService;
+    private final RateLimiter rateLimiter;
+    private final ChallengeValidator validator;
 
     private static final String WORK_DIR = System.getProperty("java.io.tmpdir") + "/java-challenges/";
 
@@ -30,17 +33,40 @@ public class ChallengeService {
                             ModuleRepository moduleRepository,
                             ModuleProgressRepository progressRepository,
                             OllamaService ollamaService,
-                            GamificationService gamificationService) {
+                            GamificationService gamificationService,
+                            RateLimiter rateLimiter,
+                            ChallengeValidator validator) {
         this.submissionRepository = submissionRepository;
         this.moduleRepository = moduleRepository;
         this.progressRepository = progressRepository;
         this.ollamaService = ollamaService;
         this.gamificationService = gamificationService;
+        this.rateLimiter = rateLimiter;
+        this.validator = validator;
     }
     public ChallengeResult submit(Integer moduleId, String sourceCode, String authUserId) {
+        RateLimiter.Lease lease = rateLimiter.tryAcquire("challenge", authUserId);
+        if (lease == null) {
+            return new ChallengeResult(false, "Too many submissions. Try again in a minute.", "", null, false);
+        }
+        try (lease) {
+            return submitWithinLimit(moduleId, sourceCode, authUserId);
+        }
+    }
+
+    private ChallengeResult submitWithinLimit(Integer moduleId, String sourceCode, String authUserId) {
+        if (sourceCode == null || sourceCode.isBlank() || sourceCode.length() > 50_000) {
+            return new ChallengeResult(false, "Source code is required (maximum 50,000 characters).",
+                    "", null, false);
+        }
         CourseModule mod = moduleRepository.findById(moduleId).orElse(null);
         if (mod == null) {
             return new ChallengeResult(false, "Module not found", "", null, false);
+        }
+        ModuleProgress currentProgress = progressRepository.findByModuleId(moduleId).orElse(null);
+        if (currentProgress == null || !java.util.Set.of("challenge_ready", "completed")
+                .contains(currentProgress.getStatus())) {
+            return new ChallengeResult(false, "Complete the lesson and quiz first.", "", null, false);
         }
 
         String className = extractClassName(sourceCode);
@@ -74,14 +100,14 @@ public class ChallengeService {
         boolean passed = false;
 
         if (compileResult.success()) {
+            ChallengeValidator.Result deterministic = validator.validate(mod, sourceCode);
+            aiScore = deterministic.score();
+            passed = deterministic.passed();
             try {
-                aiFeedback = ollamaService.gradeCode(sourceCode, moduleId, authUserId);
-                aiScore = extractScore(aiFeedback);
-                passed = aiScore != null && aiScore >= 70;
+                String advisory = ollamaService.gradeCode(sourceCode, moduleId, authUserId);
+                aiFeedback = deterministic.feedback() + "\n\nAI review (advisory only):\n" + advisory;
             } catch (Exception e) {
-                // Fail-closed: an unreachable AI reviewer must NOT auto-pass a challenge.
-                aiFeedback = "Could not get AI review. Please try submitting again in a moment.";
-                passed = false;
+                aiFeedback = deterministic.feedback() + "\n\nAI review is temporarily unavailable.";
             }
         }
 
@@ -131,8 +157,11 @@ public class ChallengeService {
                 return new CompileResult(false, "javac not found on system PATH", "");
             }
 
-            ProcessBuilder pb = new ProcessBuilder(javacPath, javaFile.getFileName().toString());
+            ProcessBuilder pb = new ProcessBuilder(javacPath, "-J-Xmx128m", "-J-Xss2m",
+                    "-proc:none", "-implicit:none",
+                    javaFile.getFileName().toString());
             pb.directory(workDir.toFile());
+            pb.environment().clear();
             pb.redirectErrorStream(true);
 
             Process process = pb.start();
@@ -176,19 +205,6 @@ public class ChallengeService {
     private String extractClassName(String code) {
         Matcher m = Pattern.compile("(?:public\\s+)?(?:class|interface|enum)\\s+(\\w+)").matcher(code);
         return m.find() ? m.group(1) : null;
-    }
-
-    private Integer extractScore(String feedback) {
-        if (feedback == null) return null;
-        Matcher m = Pattern.compile("SCORE:\\s*(\\d+)").matcher(feedback);
-        if (m.find()) {
-            try {
-                return Integer.parseInt(m.group(1));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
     }
 
     public record CompileResult(boolean success, String output, String errors) {}

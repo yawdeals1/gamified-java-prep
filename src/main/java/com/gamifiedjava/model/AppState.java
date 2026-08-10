@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public class AppState {
 
-    private Integer id = 1;
+    private Integer id;
 
     private Integer totalXp = 0;
 

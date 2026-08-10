@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.AiConversation;
 import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.studio.StudioClient;
@@ -17,14 +18,19 @@ public class AiConversationRepository extends StudioRepository<AiConversation> {
 
     private final ModuleRepository moduleRepository;
 
-    public AiConversationRepository(StudioClient client, ModuleRepository moduleRepository) {
-        super(client, "ai_conversation");
+    public AiConversationRepository(StudioClient client, ModuleRepository moduleRepository,
+                                    CurrentUserContext users) {
+        super(client, "ai_conversation", users);
         this.moduleRepository = moduleRepository;
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(AiConversation c) {
         Map<String, Object> row = new LinkedHashMap<>();
+        row.put("chat_id", c.getChatId());
+        row.put("auth_user_id", c.getAuthUserId());
         row.put("role", c.getRole());
         row.put("message", c.getMessage());
         row.put("module_id", c.getModule() != null ? c.getModule().getId() : null);
@@ -37,6 +43,8 @@ public class AiConversationRepository extends StudioRepository<AiConversation> {
     protected AiConversation fromRow(Map<String, Object> r) {
         AiConversation c = new AiConversation();
         c.setId(asInt(r.get("id")));
+        c.setChatId(asInt(r.get("chat_id")));
+        c.setAuthUserId(str(r.get("auth_user_id")));
         c.setRole(str(r.get("role")));
         c.setMessage(str(r.get("message")));
         Integer moduleId = asInt(r.get("module_id"));
@@ -68,5 +76,18 @@ public class AiConversationRepository extends StudioRepository<AiConversation> {
         all.sort(Comparator.comparing(AiConversation::getCreatedAt,
                 Comparator.nullsFirst(Comparator.naturalOrder())));
         return all;
+    }
+
+    public List<AiConversation> findByChatIdOrderByCreatedAtAsc(Integer chatId) {
+        List<AiConversation> all = findBy("chat_id", chatId);
+        all.sort(Comparator.comparing(AiConversation::getCreatedAt,
+                Comparator.nullsFirst(Comparator.naturalOrder())));
+        return all;
+    }
+
+    public long countUserMessages(String authUserId) {
+        return findBy("auth_user_id", authUserId).stream()
+                .filter(message -> "user".equals(message.getRole()))
+                .count();
     }
 }

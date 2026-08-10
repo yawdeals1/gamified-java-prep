@@ -18,6 +18,7 @@ public class ResetController {
     private final AchievementRepository achievementRepository;
     private final XpLogRepository xpLogRepository;
     private final AiConversationRepository aiRepository;
+    private final AiChatRepository aiChatRepository;
     private final AppStateRepository appStateRepository;
     private final StepProgressRepository stepProgressRepository;
     private final ModuleService moduleService;
@@ -30,6 +31,7 @@ public class ResetController {
                            AchievementRepository achievementRepository,
                            XpLogRepository xpLogRepository,
                            AiConversationRepository aiRepository,
+                           AiChatRepository aiChatRepository,
                            AppStateRepository appStateRepository,
                            StepProgressRepository stepProgressRepository,
                            ModuleService moduleService,
@@ -41,6 +43,7 @@ public class ResetController {
         this.achievementRepository = achievementRepository;
         this.xpLogRepository = xpLogRepository;
         this.aiRepository = aiRepository;
+        this.aiChatRepository = aiChatRepository;
         this.appStateRepository = appStateRepository;
         this.stepProgressRepository = stepProgressRepository;
         this.moduleService = moduleService;
@@ -56,6 +59,7 @@ public class ResetController {
         progressRepository.deleteAll();
         achievementRepository.deleteAll();
         aiRepository.deleteAll();
+        aiChatRepository.deleteAll();
         appStateRepository.deleteAll();
 
         moduleService.seedModules();

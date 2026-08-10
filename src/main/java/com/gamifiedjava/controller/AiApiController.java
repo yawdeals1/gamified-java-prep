@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.validation.constraints.Size;
+import org.springframework.validation.annotation.Validated;
 
 @Controller
+@Validated
 public class AiApiController {
     private final UserAiSettingsService settingsService;
     private final OllamaService ollamaService;
@@ -32,7 +35,8 @@ public class AiApiController {
     }
 
     @PostMapping("/ai-api")
-    public String save(@RequestParam String apiKey, HttpServletRequest request, RedirectAttributes flash) {
+    public String save(@RequestParam @Size(max = 512) String apiKey,
+                       HttpServletRequest request, RedirectAttributes flash) {
         String clean = apiKey == null ? "" : apiKey.trim();
         if (!ollamaService.validateApiKey(clean)) {
             flash.addFlashAttribute("error", "Ollama rejected that key. Check it and try again.");
@@ -42,7 +46,7 @@ public class AiApiController {
             settingsService.save(user(request).id(), clean);
             flash.addFlashAttribute("success", "Ollama API key verified and saved securely.");
         } catch (RuntimeException e) {
-            flash.addFlashAttribute("error", e.getMessage());
+            flash.addFlashAttribute("error", "The API key could not be stored. Check server encryption configuration.");
         }
         return "redirect:/ai-api";
     }

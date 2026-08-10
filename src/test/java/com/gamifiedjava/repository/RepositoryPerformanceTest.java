@@ -3,6 +3,7 @@ package com.gamifiedjava.repository;
 import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.model.ModuleProgress;
 import com.gamifiedjava.studio.StudioClient;
+import com.gamifiedjava.auth.CurrentUserContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -43,19 +44,22 @@ class RepositoryPerformanceTest {
 
     @Test
     void countsCompletedProgressFromOneBulkResponse() {
-        when(client.list("step_progress", null, 10000)).thenReturn(List.of(
+        Map<String, String> owner = Map.of("auth_user_id", "user-1");
+        when(client.list("step_progress", owner, 10000)).thenReturn(List.of(
                 Map.of("id", 1, "step_id", 10, "module_id", 1,
-                        "attempts", 1, "completed_at", "2026-08-09T12:00:00"),
-                Map.of("id", 2, "step_id", 11, "module_id", 1, "attempts", 1),
+                        "auth_user_id", "user-1", "attempts", 1, "completed_at", "2026-08-09T12:00:00"),
+                Map.of("id", 2, "step_id", 11, "module_id", 1, "auth_user_id", "user-1", "attempts", 1),
                 Map.of("id", 3, "step_id", 20, "module_id", 2,
-                        "attempts", 2, "completed_at", "2026-08-09T12:01:00")
+                        "auth_user_id", "user-1", "attempts", 2, "completed_at", "2026-08-09T12:01:00")
         ));
 
-        var repository = new StepProgressRepository(client);
+        var users = new CurrentUserContext();
+        users.set("user-1");
+        var repository = new StepProgressRepository(client, users);
 
         assertThat(repository.completedCountByModule()).containsExactlyInAnyOrderEntriesOf(
                 Map.of(1, 1L, 2, 1L));
-        verify(client).list("step_progress", null, 10000);
+        verify(client).list("step_progress", owner, 10000);
     }
 
     @Test
@@ -63,11 +67,14 @@ class RepositoryPerformanceTest {
         CourseModule reference = new CourseModule();
         reference.setId(1);
         when(moduleRepository.reference(1)).thenReturn(reference);
-        when(client.list("module_progress", null, 10000)).thenReturn(List.of(
-                Map.of("id", 7, "module_id", 1, "status", "available")
+        Map<String, String> owner = Map.of("auth_user_id", "user-1");
+        when(client.list("module_progress", owner, 10000)).thenReturn(List.of(
+                Map.of("id", 7, "module_id", 1, "auth_user_id", "user-1", "status", "available")
         ));
 
-        var repository = new ModuleProgressRepository(client, moduleRepository);
+        var users = new CurrentUserContext();
+        users.set("user-1");
+        var repository = new ModuleProgressRepository(client, moduleRepository, users);
         List<ModuleProgress> progress = repository.findAllByOrderByIdAsc();
 
         assertThat(progress).singleElement()

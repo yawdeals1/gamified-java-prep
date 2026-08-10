@@ -4,6 +4,7 @@ import com.gamifiedjava.auth.AuthService;
 import com.gamifiedjava.auth.AuthUser;
 import com.gamifiedjava.auth.MembershipService;
 import com.gamifiedjava.service.InvitationService;
+import com.gamifiedjava.config.RateLimiter;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,22 +14,27 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.Size;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Controller
+@Validated
 public class AuthController {
 
     private final AuthService authService;
     private final MembershipService membershipService;
     private final InvitationService invitationService;
+    private final RateLimiter rateLimiter;
 
     public AuthController(AuthService authService, MembershipService membershipService,
-                          InvitationService invitationService) {
+                          InvitationService invitationService, RateLimiter rateLimiter) {
         this.authService = authService;
         this.membershipService = membershipService;
         this.invitationService = invitationService;
+        this.rateLimiter = rateLimiter;
     }
 
     @GetMapping("/auth/login")
@@ -43,7 +49,7 @@ public class AuthController {
     }
 
     @GetMapping("/auth/invite")
-    public String invitePage(@RequestParam String token, Model model) {
+    public String invitePage(@RequestParam @Size(max = 512) String token, Model model) {
         var invitation = invitationService.valid(token);
         if (invitation.isEmpty()) {
             model.addAttribute("invalidInvite", true);
@@ -55,11 +61,18 @@ public class AuthController {
     }
 
     @PostMapping("/auth/invite")
-    public String acceptInvite(@RequestParam String token,
-                               @RequestParam String password,
-                               @RequestParam String password2,
-                               @RequestParam String name,
+    public String acceptInvite(@RequestParam @Size(max = 512) String token,
+                               @RequestParam @Size(max = 128) String password,
+                               @RequestParam @Size(max = 128) String password2,
+                               @RequestParam @Size(max = 100) String name,
+                               HttpServletRequest request,
                                Model model) {
+        RateLimiter.Lease lease = rateLimiter.tryAcquire("auth", request.getRemoteAddr());
+        if (lease == null) {
+            model.addAttribute("error", "Too many account attempts. Try again in a minute.");
+            return "auth/invite";
+        }
+        try {
         var invitation = invitationService.valid(token);
         if (invitation.isEmpty()) {
             model.addAttribute("invalidInvite", true);
@@ -85,11 +98,14 @@ public class AuthController {
         }
         invitationService.accept(token, name.trim());
         return "redirect:/auth/confirm";
+        } finally {
+            lease.close();
+        }
     }
 
     @PostMapping("/auth/login")
-    public String login(@RequestParam String email,
-                        @RequestParam String password,
+    public String login(@RequestParam @Size(max = 320) String email,
+                        @RequestParam @Size(max = 128) String password,
                         HttpServletRequest request,
                         HttpServletResponse response,
                         Model model) {
@@ -97,9 +113,16 @@ public class AuthController {
             model.addAttribute("error", "Authentication is not configured on this server yet.");
             return "auth/login";
         }
-        AuthService.LoginResult result = authService.login(
-                email == null ? "" : email.trim().toLowerCase(),
-                password == null ? "" : password);
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+        RateLimiter.Lease lease = rateLimiter.tryAcquire("auth", request.getRemoteAddr());
+        if (lease == null) {
+            model.addAttribute("error", "Too many sign-in attempts. Try again in a minute.");
+            return "auth/login";
+        }
+        AuthService.LoginResult result;
+        try (lease) {
+            result = authService.login(normalizedEmail, password == null ? "" : password);
+        }
         if (result.user() == null) {
             model.addAttribute("error", result.error());
             return "auth/login";
@@ -114,6 +137,7 @@ public class AuthController {
         cookie.setPath("/");
         cookie.setMaxAge(7 * 24 * 60 * 60);
         cookie.setSecure(request.isSecure());
+        cookie.setAttribute("SameSite", "Strict");
         response.addCookie(cookie);
         return "redirect:/";
     }
@@ -125,6 +149,9 @@ public class AuthController {
         Cookie cookie = new Cookie(authService.cookieName(), "");
         cookie.setPath("/");
         cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(request.isSecure());
+        cookie.setAttribute("SameSite", "Strict");
         response.addCookie(cookie);
         return "redirect:/auth/login";
     }

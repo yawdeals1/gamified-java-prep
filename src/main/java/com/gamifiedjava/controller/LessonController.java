@@ -44,6 +44,11 @@ public class LessonController {
             ra.addFlashAttribute("error", "Module not found: " + slug);
             return "redirect:/";
         }
+        var progress = moduleService.getProgress(module.getId());
+        if (progress == null || !progress.isUnlocked()) {
+            ra.addFlashAttribute("error", "Complete the previous module first.");
+            return "redirect:/";
+        }
 
         List<LessonStep> steps = lessonStepService.getSteps(module.getId());
         Set<Integer> done = lessonStepService.completedStepIds(module.getId());
@@ -69,9 +74,13 @@ public class LessonController {
 
     private String writeJson(Object value) {
         try {
-            return objectMapper.writeValueAsString(value);
+            return scriptSafeJson(objectMapper.writeValueAsString(value));
         } catch (JsonProcessingException e) {
             return "[]";
         }
+    }
+
+    private String scriptSafeJson(String json) {
+        return json.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026");
     }
 }

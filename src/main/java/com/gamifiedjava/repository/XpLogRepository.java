@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.XpLog;
 import com.gamifiedjava.studio.StudioClient;
 import com.gamifiedjava.studio.StudioRepository;
@@ -14,9 +15,11 @@ import java.util.Map;
 @Repository
 public class XpLogRepository extends StudioRepository<XpLog> {
 
-    public XpLogRepository(StudioClient client) {
-        super(client, "xp_log");
+    public XpLogRepository(StudioClient client, CurrentUserContext users) {
+        super(client, "xp_log", users);
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(XpLog l) {

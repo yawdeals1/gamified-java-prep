@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.CourseModule;
 import com.gamifiedjava.model.QuizAttempt;
 import com.gamifiedjava.model.QuizQuestion;
@@ -21,11 +22,14 @@ public class QuizAttemptRepository extends StudioRepository<QuizAttempt> {
 
     public QuizAttemptRepository(StudioClient client,
                                  ModuleRepository moduleRepository,
-                                 QuizQuestionRepository questionRepository) {
-        super(client, "quiz_attempt");
+                                 QuizQuestionRepository questionRepository,
+                                 CurrentUserContext users) {
+        super(client, "quiz_attempt", users);
         this.moduleRepository = moduleRepository;
         this.questionRepository = questionRepository;
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(QuizAttempt a) {

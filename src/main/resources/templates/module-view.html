@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
     <script src="/js/vendor/marked.min.js"></script>
-    <script src="/js/vendor/purify.min.js"></script>
+    <script src="/webjars/dompurify/3.2.7/dist/purify.min.js"></script>
     
     <style>
         body { background: #0B0F0E; color: #EAF2EF; -webkit-font-smoothing: antialiased; }
@@ -162,7 +162,7 @@
           ALLOWED_ATTR: []
         });
       } else {
-        el.innerHTML = raw;
+        el.textContent = MODULE_MD;
       }
     }
   });

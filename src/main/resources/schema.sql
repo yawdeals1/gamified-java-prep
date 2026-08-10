@@ -24,9 +24,10 @@ CREATE TABLE IF NOT EXISTS quiz_question (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Per-module progress for the single user
+-- Per-user module progress
 CREATE TABLE IF NOT EXISTS module_progress (
     id SERIAL PRIMARY KEY,
+    auth_user_id VARCHAR(100) NOT NULL,
     module_id INT REFERENCES course_module(id) ON DELETE CASCADE,
     status VARCHAR(20) DEFAULT 'locked',
     quiz_score INT DEFAULT 0,
@@ -35,12 +36,13 @@ CREATE TABLE IF NOT EXISTS module_progress (
     challenge_attempts INT DEFAULT 0,
     completed_at TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(module_id)
+    UNIQUE(auth_user_id, module_id)
 );
 
 -- Track individual quiz answers
 CREATE TABLE IF NOT EXISTS quiz_attempt (
     id SERIAL PRIMARY KEY,
+    auth_user_id VARCHAR(100) NOT NULL,
     module_id INT REFERENCES course_module(id) ON DELETE CASCADE,
     question_id INT REFERENCES quiz_question(id) ON DELETE CASCADE,
     selected_index INT,
@@ -51,6 +53,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempt (
 -- Code challenge submissions
 CREATE TABLE IF NOT EXISTS challenge_submission (
     id SERIAL PRIMARY KEY,
+    auth_user_id VARCHAR(100) NOT NULL,
     module_id INT REFERENCES course_module(id) ON DELETE CASCADE,
     source_code TEXT NOT NULL,
     compile_output TEXT,
@@ -64,24 +67,42 @@ CREATE TABLE IF NOT EXISTS challenge_submission (
 -- Achievements / badges
 CREATE TABLE IF NOT EXISTS achievement (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
+    auth_user_id VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     description VARCHAR(500),
     icon VARCHAR(100),
-    unlocked_at TIMESTAMP
+    unlocked_at TIMESTAMP,
+    UNIQUE(auth_user_id, name)
 );
 
 -- XP transaction log
 CREATE TABLE IF NOT EXISTS xp_log (
     id SERIAL PRIMARY KEY,
+    auth_user_id VARCHAR(100) NOT NULL,
     action VARCHAR(100) NOT NULL,
     xp_gained INT NOT NULL,
     note VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- AI conversation history
+-- AI chat threads (owned per signed-in user)
+CREATE TABLE IF NOT EXISTS ai_chat (
+    id SERIAL PRIMARY KEY,
+    auth_user_id VARCHAR(100) NOT NULL,
+    title VARCHAR(120) NOT NULL DEFAULT 'New chat',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ai_chat_user_updated_idx
+    ON ai_chat(auth_user_id, updated_at DESC);
+
+-- Messages inside AI chat threads. chat_id remains nullable for contextual
+-- lesson/sandbox tutor requests that do not belong to the full chat page.
 CREATE TABLE IF NOT EXISTS ai_conversation (
     id SERIAL PRIMARY KEY,
+    chat_id INT REFERENCES ai_chat(id) ON DELETE CASCADE,
+    auth_user_id VARCHAR(100) NOT NULL,
     role VARCHAR(20) NOT NULL,
     message TEXT NOT NULL,
     module_id INT REFERENCES course_module(id) ON DELETE SET NULL,
@@ -89,9 +110,13 @@ CREATE TABLE IF NOT EXISTS ai_conversation (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- App state (single user: XP total, streak, etc.)
+CREATE INDEX IF NOT EXISTS ai_conversation_chat_created_idx
+    ON ai_conversation(chat_id, created_at);
+
+-- Per-user XP total, streak, etc.
 CREATE TABLE IF NOT EXISTS app_state (
-    id INT PRIMARY KEY DEFAULT 1,
+    id SERIAL PRIMARY KEY,
+    auth_user_id VARCHAR(100) NOT NULL UNIQUE,
     total_xp INT DEFAULT 0,
     current_level INT DEFAULT 1,
     streak_count INT DEFAULT 0,
@@ -99,11 +124,6 @@ CREATE TABLE IF NOT EXISTS app_state (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Insert initial app state row
-INSERT INTO app_state (id, total_xp, current_level, streak_count)
-VALUES (1, 0, 1, 0)
-ON CONFLICT (id) DO NOTHING;
 
 -- Application RBAC. Deploro Auth owns credentials; this table owns access/roles.
 CREATE TABLE IF NOT EXISTS app_user (

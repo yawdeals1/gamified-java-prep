@@ -23,15 +23,17 @@ public class AuthFilter extends OncePerRequestFilter {
 
     private final AuthService authService;
     private final MembershipService membershipService;
+    private final CurrentUserContext currentUserContext;
 
-    public AuthFilter(AuthService authService, MembershipService membershipService) {
+    public AuthFilter(AuthService authService, MembershipService membershipService,
+                      CurrentUserContext currentUserContext) {
         this.authService = authService;
         this.membershipService = membershipService;
+        this.currentUserContext = currentUserContext;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        if (!authService.isConfigured()) return true;
         String path = request.getRequestURI();
         if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/fonts/")
                 || path.startsWith("/images/") || path.startsWith("/img/")) return true;
@@ -42,6 +44,15 @@ public class AuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        if (!authService.isConfigured()) {
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            response.setContentType(request.getRequestURI().startsWith("/api/")
+                    ? "application/json" : "text/plain;charset=UTF-8");
+            response.getWriter().write(request.getRequestURI().startsWith("/api/")
+                    ? "{\"error\":\"Authentication service unavailable\"}"
+                    : "Authentication service unavailable.");
+            return;
+        }
         String token = readCookie(request, authService.cookieName());
         if (token != null) {
             AuthUser user = authService.validate(token);
@@ -51,7 +62,12 @@ public class AuthFilter extends OncePerRequestFilter {
                     request.setAttribute("authUser", user);
                     request.setAttribute("appUser", member.get());
                     request.setAttribute("isAdmin", member.get().getRole() == com.gamifiedjava.model.AppUser.Role.ADMIN);
-                    filterChain.doFilter(request, response);
+                    currentUserContext.set(user.id());
+                    try {
+                        filterChain.doFilter(request, response);
+                    } finally {
+                        currentUserContext.clear();
+                    }
                     return;
                 }
             }

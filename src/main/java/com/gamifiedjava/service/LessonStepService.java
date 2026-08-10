@@ -6,6 +6,8 @@ import com.gamifiedjava.model.LessonStep.Type;
 import com.gamifiedjava.model.StepProgress;
 import com.gamifiedjava.repository.LessonStepRepository;
 import com.gamifiedjava.repository.ModuleRepository;
+import com.gamifiedjava.repository.ModuleProgressRepository;
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.repository.StepProgressRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,17 +31,27 @@ public class LessonStepService {
     private final ModuleRepository moduleRepository;
     private final CodeRunnerService codeRunner;
     private final GamificationService gamificationService;
+    private final ModuleProgressRepository moduleProgressRepository;
+    private final CurrentUserContext users;
+    private final LessonCodeValidator codeValidator;
+    private final ConcurrentHashMap<String, Object> completionLocks = new ConcurrentHashMap<>();
 
     public LessonStepService(LessonStepRepository stepRepository,
                              StepProgressRepository progressRepository,
                              ModuleRepository moduleRepository,
                              CodeRunnerService codeRunner,
-                             GamificationService gamificationService) {
+                             GamificationService gamificationService,
+                             ModuleProgressRepository moduleProgressRepository,
+                             CurrentUserContext users,
+                             LessonCodeValidator codeValidator) {
         this.stepRepository = stepRepository;
         this.progressRepository = progressRepository;
         this.moduleRepository = moduleRepository;
         this.codeRunner = codeRunner;
         this.gamificationService = gamificationService;
+        this.moduleProgressRepository = moduleProgressRepository;
+        this.users = users;
+        this.codeValidator = codeValidator;
     }
 
     // ---------------------------------------------------------------- reads
@@ -113,6 +126,10 @@ public class LessonStepService {
     public StepResult check(Integer stepId, Integer selectedIndex, String answer, String code) {
         LessonStep step = stepRepository.findById(stepId).orElse(null);
         if (step == null) return new StepResult(false, 0, "Step not found.", null, null);
+        var moduleProgress = moduleProgressRepository.findByModuleId(step.getModule().getId()).orElse(null);
+        if (moduleProgress == null || !moduleProgress.isUnlocked()) {
+            return new StepResult(false, 0, "Complete the previous module first.", null, null);
+        }
 
         // Progression gate: only the first not-yet-done step of a module can be
         // graded (plus already-done steps for re-checks). Prevents XP/skip farming
@@ -170,13 +187,18 @@ public class LessonStepService {
                     feedback = run.timedOut() ? "Timed out - check for an infinite loop."
                             : "It doesn't compile yet. Read the console below.";
                 } else if (step.getExpectedOutput() != null && !step.getExpectedOutput().isBlank()) {
-                    correct = looseMatch(run.stdout(), step.getExpectedOutput());
+                    boolean outputMatches = looseMatch(run.stdout(), step.getExpectedOutput());
+                    boolean structureMatches = codeValidator.isValid(step, code);
+                    correct = outputMatches && structureMatches;
                     feedback = correct ? "Compiled and the output matches. Well done."
+                            : outputMatches
+                            ? "The output matches, but the required implementation is missing."
                             : "Compiles, but the output isn't what we expected.";
                     if (!correct) expected = step.getExpectedOutput();
                 } else {
-                    correct = true;
-                    feedback = "Compiled cleanly. Nice work.";
+                    correct = codeValidator.isValid(step, code);
+                    feedback = correct ? "Compiled cleanly. Nice work."
+                            : "It compiles, but it does not implement the requested structure yet.";
                 }
             }
             default -> {
@@ -191,18 +213,21 @@ public class LessonStepService {
 
     /** Award XP the first time a step is cleared; idempotent thereafter. Also bumps attempts. */
     private int awardOnce(LessonStep step) {
-        StepProgress sp = progressRepository.findByStepId(step.getId())
-                .orElseGet(() -> new StepProgress(step.getId(), step.getModule().getId()));
-        sp.setAttempts(sp.getAttempts() + 1);
-        if (sp.isDone()) {
+        String key = users.requireUserId() + ":" + step.getId();
+        synchronized (completionLocks.computeIfAbsent(key, ignored -> new Object())) {
+            StepProgress sp = progressRepository.findByStepId(step.getId())
+                    .orElseGet(() -> new StepProgress(step.getId(), step.getModule().getId()));
+            sp.setAttempts(sp.getAttempts() + 1);
+            if (sp.isDone()) {
+                progressRepository.save(sp);
+                return 0;
+            }
+            sp.setCompletedAt(LocalDateTime.now());
             progressRepository.save(sp);
-            return 0;
+            gamificationService.addXp("step_" + step.getType().toLowerCase(),
+                    step.getXpReward(), "Cleared step: " + step.getTitle());
+            return step.getXpReward();
         }
-        sp.setCompletedAt(LocalDateTime.now());
-        progressRepository.save(sp);
-        gamificationService.addXp("step_" + step.getType().toLowerCase(),
-                step.getXpReward(), "Cleared step: " + step.getTitle());
-        return step.getXpReward();
     }
 
     private String normalize(String s) {

@@ -28,11 +28,6 @@ public class ModuleController {
 
         ModuleProgress progress = moduleService.getProgress(mod.getId());
 
-        if (progress != null && ("available".equals(progress.getStatus()))) {
-            moduleService.completeModuleReading(mod.getId());
-            progress = moduleService.getProgress(mod.getId());
-        }
-
         model.addAttribute("module", mod);
         model.addAttribute("progress", progress);
         model.addAttribute("state", gamificationService.getState());

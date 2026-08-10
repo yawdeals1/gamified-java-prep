@@ -32,6 +32,8 @@ public class QuizController {
     public String showQuiz(@PathVariable String slug, Model model) throws Exception {
         CourseModule mod = moduleService.getBySlug(slug);
         if (mod == null) return "redirect:/";
+        ModuleProgress progress = moduleService.getProgress(mod.getId());
+        if (!quizAllowed(progress)) return "redirect:/module/" + slug;
 
         var questions = quizService.getQuestionsForModule(mod.getId());
         if (questions.isEmpty()) return "redirect:/";
@@ -49,7 +51,7 @@ public class QuizController {
 
         model.addAttribute("module", mod);
         model.addAttribute("state", gamificationService.getState());
-        model.addAttribute("questionsJson", mapper.writeValueAsString(clientQs));
+        model.addAttribute("questionsJson", scriptSafeJson(mapper.writeValueAsString(clientQs)));
         model.addAttribute("questionCount", questions.size());
         return "quiz";
     }
@@ -60,6 +62,8 @@ public class QuizController {
                              Model model) {
         CourseModule mod = moduleService.getBySlug(slug);
         if (mod == null) return "redirect:/";
+        ModuleProgress progress = moduleService.getProgress(mod.getId());
+        if (!quizAllowed(progress)) return "redirect:/module/" + slug;
 
         Map<Integer, Integer> answers = new LinkedHashMap<>();
         for (var entry : allParams.entrySet()) {
@@ -82,5 +86,14 @@ public class QuizController {
         model.addAttribute("result", result);
         model.addAttribute("state", state);
         return "quiz-result";
+    }
+
+    private boolean quizAllowed(ModuleProgress progress) {
+        if (progress == null) return false;
+        return Set.of("quiz_ready", "challenge_ready", "completed").contains(progress.getStatus());
+    }
+
+    private String scriptSafeJson(String json) {
+        return json.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026");
     }
 }

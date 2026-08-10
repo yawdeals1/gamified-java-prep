@@ -21,6 +21,7 @@ The image reads everything from env vars. No database credentials, no config fil
 | `INVITE_FROM_EMAIL` | yes for invitations | Verified sender address (currently `invite@deploro.com`) |
 | `BIND_ADDRESS` | no | Default `127.0.0.1`; must be `0.0.0.0` in Docker |
 | `JAVA_OPTS` | no | e.g. `-Xmx1g` |
+| `CODE_RUNNER_EXECUTION_ENABLED` | no | Local loopback development only; ignored on public bind addresses |
 
 ## 2. Build and run
 
@@ -30,6 +31,10 @@ docker compose up -d --build     # uses docker-compose.yml (env passthrough)
 
 The runtime image is a JDK (`eclipse-temurin:21-jdk`) — required because the app
 compiles learner Java in-process (`javax.tools.JavaCompiler`).
+
+Public/container deployments are intentionally compile-only. Running untrusted
+learner bytecode requires a separate hardened sandbox service; never enable it
+inside the application container.
 
 ## 3. Point Auth confirmation links at the app
 

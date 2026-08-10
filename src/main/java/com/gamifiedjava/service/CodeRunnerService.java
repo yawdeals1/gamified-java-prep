@@ -1,6 +1,7 @@
 package com.gamifiedjava.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,13 @@ public class CodeRunnerService {
     private static final long TIMEOUT_SECONDS = 8;
     private static final int MAX_OUTPUT_CHARS = 20_000;
     private static final int MAX_SOURCE_CHARS = 50_000;
+    private final boolean executionAllowed;
+
+    public CodeRunnerService(
+            @Value("${code.runner.execution-enabled:false}") boolean executionEnabled,
+            @Value("${server.address:127.0.0.1}") String bindAddress) {
+        this.executionAllowed = executionEnabled && isLoopback(bindAddress);
+    }
 
     public RunResult run(String sourceCode) {
         if (sourceCode == null || sourceCode.isBlank()) {
@@ -51,7 +59,9 @@ public class CodeRunnerService {
 
             // --- compile ---
             String javac = findTool("javac");
-            ProcessResult compile = exec(workDir, javac, javaFile.getFileName().toString());
+            ProcessResult compile = exec(workDir, javac, "-J-Xmx128m", "-J-Xss2m",
+                    "-proc:none", "-implicit:none",
+                    javaFile.getFileName().toString());
             if (compile.timedOut) {
                 return new RunResult(false, false, "", "Compilation timed out.", true);
             }
@@ -62,6 +72,11 @@ public class CodeRunnerService {
             // A class with no main() still compiles — that's a valid outcome for many steps.
             if (!sourceCode.contains("static void main")) {
                 return new RunResult(true, true, "", "", false);
+            }
+
+            if (!executionAllowed) {
+                return new RunResult(true, true, "",
+                        "Code compiled successfully. Execution is disabled on public deployments.", false);
             }
 
             // --- run (memory-capped JVM: heap 256m, stack 16m; full-sandbox
@@ -88,6 +103,7 @@ public class CodeRunnerService {
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(dir.toFile());
+            pb.environment().clear();
             pb.redirectErrorStream(true);
             Process p = pb.start();
             boolean finished = p.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -124,6 +140,13 @@ public class CodeRunnerService {
     private String extractClassName(String code) {
         Matcher m = Pattern.compile("(?:public\\s+)?(?:class|interface|enum|record)\\s+(\\w+)").matcher(code);
         return m.find() ? m.group(1) : null;
+    }
+
+    private boolean isLoopback(String address) {
+        if (address == null) return false;
+        String value = address.strip().toLowerCase();
+        return "127.0.0.1".equals(value) || "localhost".equals(value)
+                || "::1".equals(value) || "0:0:0:0:0:0:0:1".equals(value);
     }
 
     private String cap(String s) {

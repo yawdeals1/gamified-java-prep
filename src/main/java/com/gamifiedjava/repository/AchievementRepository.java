@@ -1,5 +1,6 @@
 package com.gamifiedjava.repository;
 
+import com.gamifiedjava.auth.CurrentUserContext;
 import com.gamifiedjava.model.Achievement;
 import com.gamifiedjava.studio.StudioClient;
 import com.gamifiedjava.studio.StudioRepository;
@@ -15,9 +16,11 @@ import java.util.Optional;
 @Repository
 public class AchievementRepository extends StudioRepository<Achievement> {
 
-    public AchievementRepository(StudioClient client) {
-        super(client, "achievement");
+    public AchievementRepository(StudioClient client, CurrentUserContext users) {
+        super(client, "achievement", users);
     }
+
+    @Override protected String ownerColumn() { return "auth_user_id"; }
 
     @Override
     protected Map<String, Object> toRow(Achievement a) {

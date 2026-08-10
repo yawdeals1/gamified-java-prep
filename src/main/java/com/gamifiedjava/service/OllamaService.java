@@ -1,7 +1,9 @@
 package com.gamifiedjava.service;
 
+import com.gamifiedjava.model.AiChat;
 import com.gamifiedjava.model.AiConversation;
 import com.gamifiedjava.model.CourseModule;
+import com.gamifiedjava.repository.AiChatRepository;
 import com.gamifiedjava.repository.AiConversationRepository;
 import com.gamifiedjava.repository.ModuleRepository;
 import com.gamifiedjava.util.MojibakeRepair;
@@ -19,7 +21,10 @@ import java.util.*;
 public class OllamaService {
 
     private static final Logger log = LoggerFactory.getLogger(OllamaService.class);
+    private static final int MAX_CONTEXT_MESSAGES = 20;
+    private static final int MAX_CONTEXT_CHARS = 16_000;
 
+    private final AiChatRepository chatRepository;
     private final AiConversationRepository conversationRepository;
     private final ModuleRepository moduleRepository;
     private final GamificationService gamificationService;
@@ -34,10 +39,12 @@ public class OllamaService {
     @Value("${ollama.base-url}")
     private String baseUrl;
 
-    public OllamaService(AiConversationRepository conversationRepository,
+    public OllamaService(AiChatRepository chatRepository,
+                         AiConversationRepository conversationRepository,
                          ModuleRepository moduleRepository,
                          GamificationService gamificationService,
                          UserAiSettingsService aiSettingsService) {
+        this.chatRepository = chatRepository;
         this.conversationRepository = conversationRepository;
         this.moduleRepository = moduleRepository;
         this.gamificationService = gamificationService;
@@ -45,7 +52,15 @@ public class OllamaService {
     }
 
     public String ask(String message, Integer moduleId, String contextType, String authUserId) {
+        return ask(message, moduleId, contextType, authUserId, null);
+    }
+
+    public String ask(String message, Integer moduleId, String contextType, String authUserId, Integer chatId) {
         CourseModule mod = moduleId != null ? moduleRepository.findById(moduleId).orElse(null) : null;
+        AiChat chat = chatId != null ? requireOwnedChat(chatId, authUserId) : null;
+        List<AiConversation> history = chat != null
+                ? boundedHistory(conversationRepository.findByChatIdOrderByCreatedAtAsc(chat.getId()))
+                : List.of();
 
         String systemPrompt = buildSystemPrompt(mod, contextType);
 
@@ -53,25 +68,37 @@ public class OllamaService {
         if ("openai".equalsIgnoreCase(protocol)) {
             request = new LinkedHashMap<>();
             request.put("model", model);
-            request.put("messages", List.of(
-                    Map.of("role", "system", "content", systemPrompt),
-                    Map.of("role", "user", "content", message)
-            ));
+            List<Map<String, String>> messages = new ArrayList<>();
+            messages.add(Map.of("role", "system", "content", systemPrompt));
+            for (AiConversation previous : history) {
+                String role = "assistant".equals(previous.getRole()) ? "assistant" : "user";
+                messages.add(Map.of("role", role, "content", previous.getMessage()));
+            }
+            messages.add(Map.of("role", "user", "content", message));
+            request.put("messages", messages);
             request.put("stream", false);
         } else {
             request = new LinkedHashMap<>();
             request.put("model", model);
             request.put("system", systemPrompt);
-            request.put("prompt", message);
+            request.put("prompt", conversationPrompt(history, message));
             request.put("stream", false);
         }
 
         String finalResponse = MojibakeRepair.repair(callModel(request, requiredKey(authUserId)));
 
-        ConversationLogger.log(conversationRepository, "user", message, mod, contextType);
-        ConversationLogger.log(conversationRepository, "assistant", finalResponse, mod, contextType);
+        ConversationLogger.log(conversationRepository, "user", message, mod, contextType, chatId, authUserId);
+        ConversationLogger.log(conversationRepository, "assistant", finalResponse, mod, contextType, chatId, authUserId);
 
-        long chatCount = conversationRepository.count();
+        if (chat != null) {
+            if (chat.getTitle() == null || chat.getTitle().isBlank() || "New chat".equals(chat.getTitle())) {
+                chat.setTitle(titleFrom(message));
+            }
+            chat.setUpdatedAt(java.time.LocalDateTime.now());
+            chatRepository.save(chat);
+        }
+
+        long chatCount = conversationRepository.countUserMessages(authUserId);
         if (chatCount >= 20) {
             gamificationService.unlockIf("Curious Mind", true);
         }
@@ -137,7 +164,7 @@ public class OllamaService {
             return responseError(e.getStatusCode().value());
         } catch (RestClientException e) {
             log.warn("Could not reach Ollama at {}: {}", baseUrl, e.getMessage());
-            return "Could not reach the AI backend at " + baseUrl + ". Is the service running?";
+            return "Could not reach the AI backend. Please try again later.";
         } catch (RuntimeException e) {
             log.warn("Could not read the Ollama response: {}", e.getMessage());
             return "Ollama returned an unreadable response. Please try again.";
@@ -178,8 +205,65 @@ public class OllamaService {
                 .orElseThrow(() -> new IllegalStateException("Add your Ollama API key in the AI API tab first."));
     }
 
-    public List<AiConversation> getConversationHistory() {
-        return conversationRepository.findAllByOrderByCreatedAtAsc();
+    public AiChat createChat(String authUserId) {
+        if (authUserId == null || authUserId.isBlank()) {
+            throw new IllegalArgumentException("A signed-in user is required.");
+        }
+        AiChat chat = new AiChat();
+        chat.setAuthUserId(authUserId);
+        chat.setTitle("New chat");
+        return chatRepository.save(chat);
+    }
+
+    public List<AiChat> getChats(String authUserId) {
+        return chatRepository.findByAuthUserIdOrderByUpdatedAtDesc(authUserId);
+    }
+
+    public Optional<AiChat> getChat(Integer chatId, String authUserId) {
+        if (chatId == null || authUserId == null) return Optional.empty();
+        return chatRepository.findById(chatId)
+                .filter(chat -> authUserId.equals(chat.getAuthUserId()));
+    }
+
+    public List<AiConversation> getConversationHistory(Integer chatId, String authUserId) {
+        AiChat chat = requireOwnedChat(chatId, authUserId);
+        return conversationRepository.findByChatIdOrderByCreatedAtAsc(chat.getId());
+    }
+
+    private AiChat requireOwnedChat(Integer chatId, String authUserId) {
+        return getChat(chatId, authUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat not found."));
+    }
+
+    private List<AiConversation> boundedHistory(List<AiConversation> messages) {
+        if (messages == null || messages.isEmpty()) return List.of();
+        List<AiConversation> selected = new ArrayList<>();
+        int chars = 0;
+        for (int i = messages.size() - 1; i >= 0 && selected.size() < MAX_CONTEXT_MESSAGES; i--) {
+            AiConversation message = messages.get(i);
+            int length = message.getMessage() == null ? 0 : message.getMessage().length();
+            if (!selected.isEmpty() && chars + length > MAX_CONTEXT_CHARS) break;
+            selected.add(message);
+            chars += length;
+        }
+        Collections.reverse(selected);
+        return selected;
+    }
+
+    private String conversationPrompt(List<AiConversation> history, String message) {
+        if (history.isEmpty()) return message;
+        StringBuilder prompt = new StringBuilder("Conversation so far:\n");
+        for (AiConversation previous : history) {
+            prompt.append("assistant".equals(previous.getRole()) ? "ASSISTANT: " : "USER: ")
+                    .append(previous.getMessage()).append("\n\n");
+        }
+        return prompt.append("USER: ").append(message).append("\n\nASSISTANT:").toString();
+    }
+
+    static String titleFrom(String message) {
+        String clean = message == null ? "" : message.trim().replaceAll("\\s+", " ");
+        if (clean.isBlank()) return "New chat";
+        return clean.length() <= 52 ? clean : clean.substring(0, 51).stripTrailing() + "…";
     }
 
     private String buildSystemPrompt(CourseModule mod, String contextType) {
@@ -204,8 +288,11 @@ public class OllamaService {
     }
 
     private static class ConversationLogger {
-        static void log(AiConversationRepository repo, String role, String msg, CourseModule mod, String ctxType) {
+        static void log(AiConversationRepository repo, String role, String msg, CourseModule mod,
+                        String ctxType, Integer chatId, String authUserId) {
             AiConversation c = new AiConversation();
+            c.setChatId(chatId);
+            c.setAuthUserId(authUserId);
             c.setRole(role);
             c.setMessage(msg);
             c.setModule(mod);

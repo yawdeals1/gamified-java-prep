@@ -34,7 +34,7 @@ public class DashboardController {
 
     @GetMapping("/")
     public String dashboard(Model model) {
-        AppState state = gamificationService.checkStreak();
+        AppState state = gamificationService.getState();
 
         List<CourseModule> modules;
         List<ModuleProgress> progressList;
