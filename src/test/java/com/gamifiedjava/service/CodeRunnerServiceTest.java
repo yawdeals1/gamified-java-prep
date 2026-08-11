@@ -22,6 +22,30 @@ class CodeRunnerServiceTest {
     }
 
     @Test
+    void runnerUsesPublicTypeNameWhenHelperClassComesFirst() {
+        var runner = new CodeRunnerService(true);
+        var result = runner.run("""
+                class Student {
+                    String name;
+                    int age;
+                }
+
+                public class Demo {
+                    public static void main(String[] args) {
+                        Student student = new Student();
+                        student.name = "Alice";
+                        student.age = 22;
+                        System.out.println(student.name + " " + student.age);
+                    }
+                }
+                """);
+
+        assertThat(result.compileSuccess()).isTrue();
+        assertThat(result.stdout()).isEqualTo("Alice 22");
+        assertThat(result.stderr()).isEmpty();
+    }
+
+    @Test
     void disabledRunnerStillCompilesWithoutExecuting() {
         var runner = new CodeRunnerService(false);
         var result = runner.run("""

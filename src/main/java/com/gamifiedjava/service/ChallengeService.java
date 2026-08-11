@@ -28,6 +28,11 @@ public class ChallengeService {
     private final ChallengeValidator validator;
 
     private static final String WORK_DIR = System.getProperty("java.io.tmpdir") + "/java-challenges/";
+    private static final Pattern PUBLIC_TYPE_DECLARATION = Pattern.compile(
+            "\\bpublic\\s+(?:(?:abstract|final|sealed|non-sealed|strictfp)\\s+)*"
+                    + "(?:class|interface|enum|record)\\s+([A-Za-z_$][A-Za-z0-9_$]*)\\b");
+    private static final Pattern TYPE_DECLARATION = Pattern.compile(
+            "\\b(?:class|interface|enum|record)\\s+([A-Za-z_$][A-Za-z0-9_$]*)\\b");
 
     public ChallengeService(ChallengeSubmissionRepository submissionRepository,
                             ModuleRepository moduleRepository,
@@ -203,8 +208,12 @@ public class ChallengeService {
     }
 
     private String extractClassName(String code) {
-        Matcher m = Pattern.compile("(?:public\\s+)?(?:class|interface|enum)\\s+(\\w+)").matcher(code);
-        return m.find() ? m.group(1) : null;
+        String executable = ChallengeValidator.executableText(code);
+        Matcher publicType = PUBLIC_TYPE_DECLARATION.matcher(executable);
+        if (publicType.find()) return publicType.group(1);
+
+        Matcher firstType = TYPE_DECLARATION.matcher(executable);
+        return firstType.find() ? firstType.group(1) : null;
     }
 
     public record CompileResult(boolean success, String output, String errors) {}

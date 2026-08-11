@@ -32,6 +32,11 @@ public class CodeRunnerService {
     private static final int MAX_OUTPUT_CHARS = 20_000;
     private static final int MAX_SOURCE_CHARS = 50_000;
     private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u[0-9a-fA-F]{4}");
+    private static final Pattern PUBLIC_TYPE_DECLARATION = Pattern.compile(
+            "\\bpublic\\s+(?:(?:abstract|final|sealed|non-sealed|strictfp)\\s+)*"
+                    + "(?:class|interface|enum|record)\\s+([A-Za-z_$][A-Za-z0-9_$]*)\\b");
+    private static final Pattern TYPE_DECLARATION = Pattern.compile(
+            "\\b(?:class|interface|enum|record)\\s+([A-Za-z_$][A-Za-z0-9_$]*)\\b");
     private static final List<Pattern> BLOCKED_APIS = List.of(
             Pattern.compile("\\b(?:java\\.)?(?:io|net|nio|sql|rmi)\\b"),
             Pattern.compile("\\bjavax\\.(?:naming|script)\\b"),
@@ -163,8 +168,12 @@ public class CodeRunnerService {
     }
 
     private String extractClassName(String code) {
-        Matcher m = Pattern.compile("(?:public\\s+)?(?:class|interface|enum|record)\\s+(\\w+)").matcher(code);
-        return m.find() ? m.group(1) : null;
+        String executable = ChallengeValidator.executableText(code);
+        Matcher publicType = PUBLIC_TYPE_DECLARATION.matcher(executable);
+        if (publicType.find()) return publicType.group(1);
+
+        Matcher firstType = TYPE_DECLARATION.matcher(executable);
+        return firstType.find() ? firstType.group(1) : null;
     }
 
     private boolean containsBlockedApi(String sourceCode) {
