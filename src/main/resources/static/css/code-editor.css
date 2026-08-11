@@ -1,0 +1,108 @@
+.java-code-editor {
+    --editor-background: #09100c;
+    --editor-gutter-width: 3.5rem;
+    display: grid;
+    grid-template-columns: var(--editor-gutter-width) minmax(0, 1fr);
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: var(--editor-background);
+}
+
+.java-code-editor--framed {
+    border: 1px solid rgba(148, 163, 161, 0.14);
+    border-radius: 0.75rem;
+}
+
+.java-code-editor--framed:focus-within {
+    border-color: rgba(78, 222, 163, 0.3);
+}
+
+.java-code-editor__gutter {
+    position: relative;
+    z-index: 3;
+    overflow: hidden;
+    background: rgba(11, 15, 14, 0.72);
+    border-right: 1px solid rgba(148, 163, 161, 0.12);
+    color: rgba(138, 152, 149, 0.58);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    user-select: none;
+}
+
+.java-code-editor__gutter-content,
+.java-code-editor__guide-content {
+    will-change: transform;
+}
+
+.java-code-editor__line-number {
+    display: block;
+    box-sizing: border-box;
+    padding: 0 0.8rem 0 0.35rem;
+}
+
+.java-code-editor__line-number.is-active {
+    color: #4edea3;
+}
+
+.java-code-editor__viewport {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--editor-background);
+}
+
+.java-code-editor__guides,
+.java-code-editor textarea {
+    grid-area: 1 / 1;
+}
+
+.java-code-editor__guides {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.java-code-editor__guide-content {
+    box-sizing: border-box;
+    min-width: 100%;
+}
+
+.java-code-editor__guide-row {
+    position: relative;
+    box-sizing: border-box;
+}
+
+.java-code-editor__indent-guide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(138, 152, 149, 0.16);
+}
+
+.java-code-editor textarea {
+    position: relative;
+    z-index: 2;
+    box-sizing: border-box;
+    margin: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: none;
+    background-color: transparent !important;
+    white-space: pre;
+    overflow: auto;
+    overflow-wrap: normal;
+}
+
+@media (prefers-contrast: more) {
+    .java-code-editor__indent-guide {
+        background: rgba(187, 202, 191, 0.34);
+    }
+
+    .java-code-editor__gutter {
+        color: rgba(187, 202, 191, 0.82);
+    }
+}

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>JAVA_CORE | Sandbox</title>
     <link rel="stylesheet" href="/css/app.css"/>
+    <link rel="stylesheet" href="/css/code-editor.css"/>
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
     <script src="/js/vendor/marked.min.js"></script>
@@ -142,7 +143,7 @@
                 <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">Editor | Main.java</span>
                 <span id="compile-badge" class="hidden font-label-sm text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider"></span>
             </div>
-            <textarea id="editor" spellcheck="false"
+            <textarea id="editor" data-code-editor data-code-editor-frame aria-label="Java source code" spellcheck="false"
                       onkeydown="handleTab(event)"
                       placeholder="// Write your Java here...
 public class Main {
@@ -214,8 +215,10 @@ public class Main {
     }
 
     function clearCode() {
-        document.getElementById('editor').value = '';
-        document.getElementById('editor').focus();
+        const editor = document.getElementById('editor');
+        editor.value = '';
+        JavaCodeEditor.refresh(editor);
+        editor.focus();
     }
 
     function clearConsole() {
@@ -346,5 +349,6 @@ public class Main {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
     });
 </script>
+<script src="/js/code-editor.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title th:text="'JAVA_CORE | ' + ${module.title}">JAVA_CORE | Lesson Player</title>
 <link rel="stylesheet" href="/css/app.css"/>
+<link rel="stylesheet" href="/css/code-editor.css"/>
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
 
@@ -136,7 +137,7 @@
               <span class="font-label-sm text-[11px] uppercase tracking-wider">Run</span>
             </button>
           </div>
-          <textarea x-model="code" spellcheck="false" @keydown.tab.prevent="insertTab($event)"
+          <textarea x-model="code" x-ref="codeEditor" data-code-editor aria-label="Java step solution" spellcheck="false" @keydown.tab.prevent="insertTab($event)"
                     class="w-full p-4 font-code-md text-sm leading-relaxed bg-cockpit-base text-[#EAF2EF] min-h-[280px] focus:outline-none resize-y border-0"></textarea>
           <!-- Console drawer -->
           <div x-show="console !== null" class="bg-cockpit-base border-t border-hairline p-3 font-code-md text-xs">
@@ -349,6 +350,7 @@
         this.feedback = this.current.done ? 'You already completed this step correctly.' : '';
         this.expected = '';
         this.tutorMsg = 'Work through this step. Ask me to explain it, drop a hint, or review your code.';
+        this.$nextTick(() => window.JavaCodeEditor?.refresh(this.$refs.codeEditor));
       },
 
       async runDemo() {
@@ -455,5 +457,6 @@
     };
   }
 </script>
+<script src="/js/code-editor.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title th:text="'JAVA_CORE | Challenge | ' + ${module.title}">JAVA_CORE | Challenge</title>
     <link rel="stylesheet" href="/css/app.css"/>
+    <link rel="stylesheet" href="/css/code-editor.css"/>
     <link rel="stylesheet" href="/css/fonts.css?v=4" media="print" onload="this.media='all'"/>
     <noscript><link href="/css/fonts.css?v=4" rel="stylesheet"/></noscript>
     
@@ -70,7 +71,7 @@
                       style="font-variation-settings:'FILL' 0;">code</span>
                 <span class="font-label-sm text-[10px] text-ghost-text uppercase tracking-widest">Your Solution | Main.java</span>
             </div>
-            <textarea id="editor" name="sourceCode" spellcheck="false"
+            <textarea id="editor" name="sourceCode" data-code-editor data-code-editor-frame aria-label="Java challenge solution" spellcheck="false"
                       onkeydown="if(event.key==='Tab'){event.preventDefault();var s=this.selectionStart;this.value=this.value.substring(0,s)+'    '+this.value.substring(this.selectionEnd);this.selectionStart=this.selectionEnd=s+4;}"
                       th:text="${module.challengeTemplateCode} ?: 'public class Main {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}'"></textarea>
 
@@ -120,5 +121,6 @@
         </div>
     </div>
 </main>
+<script src="/js/code-editor.js"></script>
 </body>
 </html>
