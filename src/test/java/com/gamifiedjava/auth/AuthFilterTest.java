@@ -27,6 +27,13 @@ class AuthFilterTest {
     }
 
     @Test
+    void webjarAssetsArePublicSoClientLibrariesCanLoad() {
+        var request = new MockHttpServletRequest("GET", "/webjars/dompurify/3.2.7/dist/purify.min.js");
+
+        assertThat(filter.shouldNotFilter(request)).isTrue();
+    }
+
+    @Test
     void applicationPagesRemainProtected() {
         var request = new MockHttpServletRequest("GET", "/");
 
